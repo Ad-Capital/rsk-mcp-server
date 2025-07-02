@@ -1,0 +1,35 @@
+{
+  "name": "devx-mcp-server",
+  "version": "0.0.1",
+  "description": "MCP (model context protocol) for Rootstock DevX Team Tooling",
+  "keywords": [
+    "MCP",
+    "DevX",
+    "Tooling"
+  ],
+  "license": "MIT",
+  "author": "Sebastian G",
+  "type": "module",
+  "bin": {
+    "devx-mcp-server": "./build/index.js"
+  },
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc && chmod 755 build/index.js"
+  },
+  "files": [
+    "build"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.13.2",
+    "@rsksmart/rsk-cli": "^1.1.0",
+    "@types/inquirer": "^9.0.8",
+    "inquirer": "^12.7.0",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.8",
+    "typescript": "^5.8.3"
+  }
+}
