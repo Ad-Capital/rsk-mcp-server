@@ -1,4 +1,3 @@
-// Declaraciones de tipos para @rsksmart/rsk-cli
 declare module '@rsksmart/rsk-cli/dist/src/commands/wallet.js' {
   export function walletCommand(
     _action?: string,

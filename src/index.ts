@@ -26,7 +26,6 @@ type WalletItem = {
   iv: string;
 };
 
-// Password validation function
 function validatePassword(password: string): { valid: boolean; error?: string } {
   if (!password) {
     return { valid: false, error: "Password is required" };
@@ -36,13 +35,11 @@ function validatePassword(password: string): { valid: boolean; error?: string } 
     return { valid: false, error: "Password must be between 6 and 20 characters" };
   }
   
-  // Allow only alphanumeric and safe special characters
   const safePasswordRegex = /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/;
   if (!safePasswordRegex.test(password)) {
     return { valid: false, error: "Password contains invalid characters. Use only letters, numbers, and safe symbols" };
   }
   
-  // Basic SQL injection and script prevention
   const dangerousPatterns = [
     /script/i, /select/i, /insert/i, /delete/i, /drop/i, /union/i,
     /<script/i, /javascript:/i, /on\w+=/i, /eval\(/i, /exec\(/i
@@ -57,7 +54,6 @@ function validatePassword(password: string): { valid: boolean; error?: string } 
   return { valid: true };
 }
 
-// Function to extract password from JSON file
 function extractPasswordFromFile(fileContent: string): { password?: string; error?: string } {
   try {
     const jsonData = JSON.parse(fileContent);
@@ -74,7 +70,6 @@ function extractPasswordFromFile(fileContent: string): { password?: string; erro
       return { error: "Password must be a string value" };
     }
     
-    // Validate the extracted password
     const validation = validatePassword(jsonData.password);
     if (!validation.valid) {
       return { error: `Invalid password: ${validation.error}` };
@@ -139,10 +134,10 @@ server.tool(
         .string()
         .optional()
         .describe("JSON file content with password field - format: {\"password\": \"yourpassword\"}"),
-      walletData: z
-        .custom<WalletData>()
-        .optional()
-        .describe("Existing wallet data JSON - only needed for importing wallets"),
+             walletData: z
+         .custom<WalletData>()
+         .optional()
+         .describe("Your previously saved wallet configuration file content (my-wallets.json) - required for importing existing wallets"),
       walletName: z
         .string()
         .optional()
@@ -163,7 +158,6 @@ server.tool(
      try {
        console.log(`🔨 Processing wallet option: ${walletOption}`);
 
-       // Try to extract password from JSON file first
        let finalPassword = walletPassword;
        
        if (passwordFile && !walletPassword) {
@@ -216,7 +210,25 @@ Please check your JSON file format and try again.`,
        }
 
        if (walletOption === "🔑 Import existing wallet" && !walletData) {
-         missingInfo.push("📁 **Wallet Data**: Please provide your existing wallet JSON data or private key");
+         missingInfo.push(`📁 **Wallet Configuration File**: 
+         
+Upload your previously saved wallet configuration file (my-wallets.json) that contains your existing wallets data.
+
+**Format expected:**
+\`\`\`json
+{
+  "wallets": {
+    "WalletName": {
+      "address": "0x...",
+      "encryptedPrivateKey": "...",
+      "iv": "..."
+    }
+  },
+  "currentWallet": "WalletName"
+}
+\`\`\`
+
+**OR** if importing a single wallet, provide the private key directly.`);
        }
 
        if (missingInfo.length > 0) {
@@ -241,15 +253,46 @@ Please call the create-wallet function again with these parameters filled in.`,
          walletName,
          replaceCurrentWallet
        );
-       //TODO when correct success result, create a JSON file and send to the user
        if (commandResult?.success) {
+         const walletConfigJson = JSON.stringify(commandResult.walletsData, null, 2);
+         
          return {
            content: [
              {
                type: "text",
                text: `✅ Successfully executed: ${walletOption}
 
-Result: ${JSON.stringify(commandResult, null, 2)}
+**🎉 Wallet Created Successfully!**
+
+**📄 Wallet Details:**
+${JSON.stringify(commandResult, null, 2)}
+
+**📁 IMPORTANT: Save Your Wallet Configuration**
+
+Please save the following JSON content to a file (e.g., \`my-wallets.json\`):
+
+\`\`\`json
+${walletConfigJson}
+\`\`\`
+
+**🔐 For Future Use:**
+
+To interact with your wallets in the future, you will need **TWO files**:
+
+1. **🔒 Password File** (password.json):
+   \`\`\`json
+   {
+     "password": "yourSecurePassword123"
+   }
+   \`\`\`
+
+2. **💼 Wallet Configuration File** (my-wallets.json):
+   The JSON content above containing all your wallet data
+
+**Next Steps:**
+- Save both files in a secure location
+- Use these files when you need to import/access your wallets again
+- Keep your password file especially secure
 
 Your wallet operation has been completed. What would you like to do next?`,
              },
