@@ -15,7 +15,29 @@ declare module '@rsksmart/rsk-cli/dist/src/commands/wallet.js' {
 }
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/balance.js' {
-  export function balanceCommand(testnet?: boolean, wallet?: string, address?: string): Promise<void>;
+  export function balanceCommand(
+    testnet: boolean,
+    walletName?: string,
+    holderAddress?: string,
+    _isExternal?: boolean,
+    _token?: string,
+    _customTokenAddress?: string,
+    _walletsData?: any
+  ): Promise<{
+    success?: boolean;
+    data?: {
+      walletAddress: string;
+      network: string;
+      balance: string;
+      symbol: string;
+      tokenType: string;
+      tokenName?: string;
+      tokenSymbol?: string;
+      tokenContract?: string;
+      decimals?: number;
+    };
+    error?: string;
+  } | undefined>;
 }
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/transfer.js' {

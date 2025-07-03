@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { walletCommand } from "@rsksmart/rsk-cli/dist/src/commands/wallet.js";
+import { balanceCommand } from "@rsksmart/rsk-cli/dist/src/commands/balance.js";
 const createWalletOptions = [
     "🆕 Create a new wallet",
     "🔑 Import existing wallet",
@@ -283,6 +284,246 @@ Error: ${errorMsg}
 Please try again or select a different option.`,
                 },
             ],
+        };
+    }
+});
+server.tool("check-balance", "Check the balance of a wallet for RBTC or ERC20 tokens on Rootstock blockchain. You can either use an existing wallet file or provide wallet data directly.", {
+    testnet: z.boolean().describe("Use testnet (true) or mainnet (false)"),
+    walletName: z
+        .string()
+        .optional()
+        .describe("Specific wallet name to check balance for - uses current wallet if not provided"),
+    token: z
+        .string()
+        .optional()
+        .describe("Token to check balance for (rBTC, USDT, DOC, BPRO, RIF, FISH, Custom Token, etc.)"),
+    customTokenAddress: z
+        .string()
+        .optional()
+        .describe("Custom token contract address - required if token is 'Custom Token'"),
+    walletData: z
+        .union([z.custom(), z.string()])
+        .optional()
+        .describe("Your previously saved wallet configuration file content (my-wallets.json) - can be a JSON object or string - required if you want to use specific wallet data"),
+}, async ({ testnet, walletName, token, customTokenAddress, walletData }) => {
+    try {
+        const missingInfo = [];
+        if (!token) {
+            missingInfo.push(`💰 **Token Selection**: Please specify which token to check balance for.
+        
+**Available options:**
+- \`rBTC\` - Rootstock Bitcoin (native token)
+- \`USDT\` - Tether USD 
+- \`DOC\` - Dollar on Chain
+- \`BPRO\` - BitPro
+- \`RIF\` - RSK Infrastructure Framework
+- \`FISH\` - Fish Token
+- \`Custom Token\` - Specify your own token address
+
+**Example:** "rBTC" or "USDT"`);
+        }
+        if (token === "Custom Token" && !customTokenAddress) {
+            missingInfo.push(`📄 **Custom Token Address**: Please provide the contract address for your custom token.
+         
+**Example:** "0x1234567890abcdef1234567890abcdef12345678"`);
+        }
+        if (missingInfo.length > 0) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `To check balance, I need the following information:
+
+${missingInfo.map((info, index) => `${index + 1}. ${info}`).join("\n")}
+
+Please call the check-balance function again with these parameters filled in.`,
+                    },
+                ],
+            };
+        }
+        // Process walletData if provided as string
+        let processedWalletData = walletData;
+        if (typeof walletData === 'string') {
+            try {
+                processedWalletData = JSON.parse(walletData);
+            }
+            catch (error) {
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: `❌ **Invalid wallet data format**
+
+The walletData provided is not valid JSON. Please ensure it's properly formatted.
+
+Error: ${error instanceof Error ? error.message : String(error)}
+
+Expected format:
+\`\`\`json
+{
+  "wallets": {
+    "walletName": {
+      "address": "0x...",
+      "encryptedPrivateKey": "...",
+      "iv": "..."
+    }
+  },
+  "currentWallet": "walletName"
+}
+\`\`\``,
+                        },
+                    ],
+                };
+            }
+        }
+        const result = await balanceCommand(testnet, walletName, undefined, true, token, customTokenAddress, processedWalletData);
+        if (result?.success && result.data) {
+            const { data } = result;
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `✅ **Balance Retrieved Successfully**
+
+💰 **Balance**: ${data.balance} ${data.symbol}
+📄 **Wallet Address**: ${data.walletAddress}
+🌐 **Network**: ${data.network}
+🔗 **Token Type**: ${data.tokenType}${data.tokenName
+                            ? `
+📝 **Token Name**: ${data.tokenName}
+📄 **Contract**: ${data.tokenContract}
+🔢 **Decimals**: ${data.decimals}`
+                            : ""}
+
+**Note**: Ensure that transactions are being conducted on the correct network.
+
+What would you like to do next?`,
+                    },
+                ],
+            };
+        }
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: `❌ **Failed to check balance**
+
+Error: ${result?.error || "Unknown error occurred"}
+
+Please verify:
+- Your wallet exists and is properly configured
+- The token address is correct (if using custom token)
+- You're connected to the correct network
+
+**If you don't have a wallet file locally:**
+- Upload your wallet configuration file (my-wallets.json) content using the \`walletData\` parameter
+- Or create a wallet first using the \`create-wallet\` function
+
+Try again or check your wallet configuration.`,
+                },
+            ],
+        };
+    }
+    catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: `❌ **Error checking balance**
+
+Error: ${errorMsg}
+
+Please try again or check your wallet setup.`,
+                },
+            ],
+        };
+    }
+});
+server.tool("use-wallet-from-creation", "Use wallet data directly from a previous wallet creation result. This helps avoid re-uploading files.", {
+    testnet: z.boolean().describe("Use testnet (true) or mainnet (false)"),
+    token: z.string().describe("Token to check balance for (rBTC, USDT, DOC, BPRO, RIF, FISH, Custom Token, etc.)"),
+    customTokenAddress: z.string().optional().describe("Custom token contract address - required if token is 'Custom Token'"),
+    walletCreationResult: z.string().describe("The complete JSON result from create-wallet function including walletsData")
+}, async ({ testnet, token, customTokenAddress, walletCreationResult }) => {
+    try {
+        // Parse the wallet creation result
+        let walletResult;
+        try {
+            walletResult = JSON.parse(walletCreationResult);
+        }
+        catch (error) {
+            return {
+                content: [{
+                        type: "text",
+                        text: `❌ **Invalid wallet creation result format**
+
+Please provide the complete JSON result from when you created the wallet.
+
+Error: ${error instanceof Error ? error.message : String(error)}`
+                    }]
+            };
+        }
+        // Extract walletData from the result
+        const walletData = walletResult.walletsData;
+        if (!walletData || !walletData.wallets || !walletData.currentWallet) {
+            return {
+                content: [{
+                        type: "text",
+                        text: `❌ **Invalid wallet data structure**
+
+The wallet creation result doesn't contain valid wallet data. Please ensure you're using the complete result from create-wallet.`
+                    }]
+            };
+        }
+        // Call balance command with the extracted wallet data
+        const result = await balanceCommand(testnet, undefined, // use current wallet
+        undefined, // holderAddress
+        true, // _isExternal
+        token, customTokenAddress, walletData);
+        if (result?.success && result.data) {
+            const { data } = result;
+            return {
+                content: [{
+                        type: "text",
+                        text: `✅ **Balance Retrieved Successfully**
+
+💰 **Balance**: ${data.balance} ${data.symbol}
+📄 **Wallet Address**: ${data.walletAddress}
+🌐 **Network**: ${data.network}
+🔗 **Token Type**: ${data.tokenType}${data.tokenName ? `
+📝 **Token Name**: ${data.tokenName}
+📄 **Contract**: ${data.tokenContract}
+🔢 **Decimals**: ${data.decimals}` : ''}
+
+**Note**: Ensure that transactions are being conducted on the correct network.
+
+What would you like to do next?`
+                    }]
+            };
+        }
+        return {
+            content: [{
+                    type: "text",
+                    text: `❌ **Failed to check balance**
+
+Error: ${result?.error || "Unknown error occurred"}
+
+Please verify your wallet configuration and try again.`
+                }]
+        };
+    }
+    catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        return {
+            content: [{
+                    type: "text",
+                    text: `❌ **Error processing wallet data**
+
+Error: ${errorMsg}
+
+Please ensure you're providing the complete wallet creation result.`
+                }]
         };
     }
 });
