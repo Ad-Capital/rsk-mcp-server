@@ -17,19 +17,37 @@ function validatePassword(password) {
         return { valid: false, error: "Password is required" };
     }
     if (password.length < 6 || password.length > 20) {
-        return { valid: false, error: "Password must be between 6 and 20 characters" };
+        return {
+            valid: false,
+            error: "Password must be between 6 and 20 characters",
+        };
     }
     const safePasswordRegex = /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/;
     if (!safePasswordRegex.test(password)) {
-        return { valid: false, error: "Password contains invalid characters. Use only letters, numbers, and safe symbols" };
+        return {
+            valid: false,
+            error: "Password contains invalid characters. Use only letters, numbers, and safe symbols",
+        };
     }
     const dangerousPatterns = [
-        /script/i, /select/i, /insert/i, /delete/i, /drop/i, /union/i,
-        /<script/i, /javascript:/i, /on\w+=/i, /eval\(/i, /exec\(/i
+        /script/i,
+        /select/i,
+        /insert/i,
+        /delete/i,
+        /drop/i,
+        /union/i,
+        /<script/i,
+        /javascript:/i,
+        /on\w+=/i,
+        /eval\(/i,
+        /exec\(/i,
     ];
     for (const pattern of dangerousPatterns) {
         if (pattern.test(password)) {
-            return { valid: false, error: "Password contains potentially unsafe content" };
+            return {
+                valid: false,
+                error: "Password contains potentially unsafe content",
+            };
         }
     }
     return { valid: true };
@@ -37,13 +55,15 @@ function validatePassword(password) {
 function extractPasswordFromFile(fileContent) {
     try {
         const jsonData = JSON.parse(fileContent);
-        if (typeof jsonData !== 'object' || jsonData === null) {
+        if (typeof jsonData !== "object" || jsonData === null) {
             return { error: "Invalid JSON format. Must be an object." };
         }
         if (!jsonData.password) {
-            return { error: "Password field not found in JSON. Expected format: {\"password\": \"yourpassword\"}" };
+            return {
+                error: 'Password field not found in JSON. Expected format: {"password": "yourpassword"}',
+            };
         }
-        if (typeof jsonData.password !== 'string') {
+        if (typeof jsonData.password !== "string") {
             return { error: "Password must be a string value" };
         }
         const validation = validatePassword(jsonData.password);
@@ -96,7 +116,7 @@ server.tool("create-wallet", "Create a new wallet based on the selected option. 
     passwordFile: z
         .string()
         .optional()
-        .describe("JSON file content with password field - format: {\"password\": \"yourpassword\"}"),
+        .describe('JSON file content with password field - format: {"password": "yourpassword"}'),
     walletData: z
         .custom()
         .optional()
@@ -111,7 +131,6 @@ server.tool("create-wallet", "Create a new wallet based on the selected option. 
         .describe("Whether to replace current wallet - will be requested if not provided"),
 }, async ({ walletOption, walletPassword, passwordFile, walletData, walletName, replaceCurrentWallet, }) => {
     try {
-        console.log(`🔨 Processing wallet option: ${walletOption}`);
         let finalPassword = walletPassword;
         if (passwordFile && !walletPassword) {
             const passwordResult = extractPasswordFromFile(passwordFile);
@@ -185,7 +204,7 @@ Upload your previously saved wallet configuration file (my-wallets.json) that co
                         type: "text",
                         text: `To proceed with "${walletOption}", I need the following information:
 
-${missingInfo.map((info, index) => `${index + 1}. ${info}`).join('\n')}
+${missingInfo.map((info, index) => `${index + 1}. ${info}`).join("\n")}
 
 Please call the create-wallet function again with these parameters filled in.`,
                     },

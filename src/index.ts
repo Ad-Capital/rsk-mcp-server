@@ -26,57 +26,84 @@ type WalletItem = {
   iv: string;
 };
 
-function validatePassword(password: string): { valid: boolean; error?: string } {
+function validatePassword(password: string): {
+  valid: boolean;
+  error?: string;
+} {
   if (!password) {
     return { valid: false, error: "Password is required" };
   }
-  
+
   if (password.length < 6 || password.length > 20) {
-    return { valid: false, error: "Password must be between 6 and 20 characters" };
+    return {
+      valid: false,
+      error: "Password must be between 6 and 20 characters",
+    };
   }
-  
+
   const safePasswordRegex = /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/;
   if (!safePasswordRegex.test(password)) {
-    return { valid: false, error: "Password contains invalid characters. Use only letters, numbers, and safe symbols" };
+    return {
+      valid: false,
+      error:
+        "Password contains invalid characters. Use only letters, numbers, and safe symbols",
+    };
   }
-  
+
   const dangerousPatterns = [
-    /script/i, /select/i, /insert/i, /delete/i, /drop/i, /union/i,
-    /<script/i, /javascript:/i, /on\w+=/i, /eval\(/i, /exec\(/i
+    /script/i,
+    /select/i,
+    /insert/i,
+    /delete/i,
+    /drop/i,
+    /union/i,
+    /<script/i,
+    /javascript:/i,
+    /on\w+=/i,
+    /eval\(/i,
+    /exec\(/i,
   ];
-  
+
   for (const pattern of dangerousPatterns) {
     if (pattern.test(password)) {
-      return { valid: false, error: "Password contains potentially unsafe content" };
+      return {
+        valid: false,
+        error: "Password contains potentially unsafe content",
+      };
     }
   }
-  
+
   return { valid: true };
 }
 
-function extractPasswordFromFile(fileContent: string): { password?: string; error?: string } {
+function extractPasswordFromFile(fileContent: string): {
+  password?: string;
+  error?: string;
+} {
   try {
     const jsonData = JSON.parse(fileContent);
-    
-    if (typeof jsonData !== 'object' || jsonData === null) {
+
+    if (typeof jsonData !== "object" || jsonData === null) {
       return { error: "Invalid JSON format. Must be an object." };
     }
-    
+
     if (!jsonData.password) {
-      return { error: "Password field not found in JSON. Expected format: {\"password\": \"yourpassword\"}" };
+      return {
+        error:
+          'Password field not found in JSON. Expected format: {"password": "yourpassword"}',
+      };
     }
-    
-    if (typeof jsonData.password !== 'string') {
+
+    if (typeof jsonData.password !== "string") {
       return { error: "Password must be a string value" };
     }
-    
+
     const validation = validatePassword(jsonData.password);
     if (!validation.valid) {
       return { error: `Invalid password: ${validation.error}` };
     }
-    
+
     return { password: jsonData.password };
-    
   } catch (error) {
     return { error: "Invalid JSON format. Please check your file syntax." };
   }
@@ -119,68 +146,76 @@ server.tool(
   }
 );
 
-  server.tool(
-    "create-wallet",
-    "Create a new wallet based on the selected option. This function will ask for required information step by step.",
-    {
-      walletOption: z
-        .enum(createWalletOptions)
-        .describe("The wallet creation option selected by the user"),
-      walletPassword: z
-        .string()
-        .optional()
-        .describe("The password for the wallet - or upload a JSON file with password field"),
-      passwordFile: z
-        .string()
-        .optional()
-        .describe("JSON file content with password field - format: {\"password\": \"yourpassword\"}"),
-             walletData: z
-         .custom<WalletData>()
-         .optional()
-         .describe("Your previously saved wallet configuration file content (my-wallets.json) - required for importing existing wallets"),
-      walletName: z
-        .string()
-        .optional()
-        .describe("The name for the new wallet - will be requested if not provided"),
-      replaceCurrentWallet: z
-        .boolean()
-        .optional()
-        .describe("Whether to replace current wallet - will be requested if not provided"),
-    },
-     async ({
-     walletOption,
-     walletPassword,
-     passwordFile,
-     walletData,
-     walletName,
-     replaceCurrentWallet,
-   }) => {
-     try {
-       console.log(`🔨 Processing wallet option: ${walletOption}`);
+server.tool(
+  "create-wallet",
+  "Create a new wallet based on the selected option. This function will ask for required information step by step.",
+  {
+    walletOption: z
+      .enum(createWalletOptions)
+      .describe("The wallet creation option selected by the user"),
+    walletPassword: z
+      .string()
+      .optional()
+      .describe(
+        "The password for the wallet - or upload a JSON file with password field"
+      ),
+    passwordFile: z
+      .string()
+      .optional()
+      .describe(
+        'JSON file content with password field - format: {"password": "yourpassword"}'
+      ),
+    walletData: z
+      .custom<WalletData>()
+      .optional()
+      .describe(
+        "Your previously saved wallet configuration file content (my-wallets.json) - required for importing existing wallets"
+      ),
+    walletName: z
+      .string()
+      .optional()
+      .describe(
+        "The name for the new wallet - will be requested if not provided"
+      ),
+    replaceCurrentWallet: z
+      .boolean()
+      .optional()
+      .describe(
+        "Whether to replace current wallet - will be requested if not provided"
+      ),
+  },
+  async ({
+    walletOption,
+    walletPassword,
+    passwordFile,
+    walletData,
+    walletName,
+    replaceCurrentWallet,
+  }) => {
+    try {
+      let finalPassword = walletPassword;
 
-       let finalPassword = walletPassword;
-       
-       if (passwordFile && !walletPassword) {
-         const passwordResult = extractPasswordFromFile(passwordFile);
-         if (passwordResult.error) {
-           return {
-             content: [
-               {
-                 type: "text",
-                 text: `❌ Error reading password file: ${passwordResult.error}
+      if (passwordFile && !walletPassword) {
+        const passwordResult = extractPasswordFromFile(passwordFile);
+        if (passwordResult.error) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `❌ Error reading password file: ${passwordResult.error}
 
 Please check your JSON file format and try again.`,
-               },
-             ],
-           };
-         }
-         finalPassword = passwordResult.password;
-       }
+              },
+            ],
+          };
+        }
+        finalPassword = passwordResult.password;
+      }
 
-       const missingInfo = [];
-       
-       if (!finalPassword) {
-         missingInfo.push(`🔒 **Secure Password Method**: 
+      const missingInfo = [];
+
+      if (!finalPassword) {
+        missingInfo.push(`🔒 **Secure Password Method**: 
          
 **RECOMMENDED: Upload JSON File** 📁
 1. Create a text file (e.g., password.json)
@@ -199,18 +234,22 @@ Please check your JSON file format and try again.`,
 - No script or SQL injection patterns
 
 **OR** provide password directly (⚠️ less secure - visible in chat)`);
-       }
-       
-       if (!walletName) {
-         missingInfo.push("📝 **Wallet Name**: Please provide a name for your wallet (e.g., 'MyRootstockWallet')");
-       }
-       
-       if (replaceCurrentWallet === undefined) {
-         missingInfo.push("🔄 **Replace Current Wallet**: Do you want to set this as your main wallet? (true/false)");
-       }
+      }
 
-       if (walletOption === "🔑 Import existing wallet" && !walletData) {
-         missingInfo.push(`📁 **Wallet Configuration File**: 
+      if (!walletName) {
+        missingInfo.push(
+          "📝 **Wallet Name**: Please provide a name for your wallet (e.g., 'MyRootstockWallet')"
+        );
+      }
+
+      if (replaceCurrentWallet === undefined) {
+        missingInfo.push(
+          "🔄 **Replace Current Wallet**: Do you want to set this as your main wallet? (true/false)"
+        );
+      }
+
+      if (walletOption === "🔑 Import existing wallet" && !walletData) {
+        missingInfo.push(`📁 **Wallet Configuration File**: 
          
 Upload your previously saved wallet configuration file (my-wallets.json) that contains your existing wallets data.
 
@@ -229,38 +268,42 @@ Upload your previously saved wallet configuration file (my-wallets.json) that co
 \`\`\`
 
 **OR** if importing a single wallet, provide the private key directly.`);
-       }
+      }
 
-       if (missingInfo.length > 0) {
-         return {
-           content: [
-             {
-               type: "text",
-               text: `To proceed with "${walletOption}", I need the following information:
+      if (missingInfo.length > 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `To proceed with "${walletOption}", I need the following information:
 
-${missingInfo.map((info, index) => `${index + 1}. ${info}`).join('\n')}
+${missingInfo.map((info, index) => `${index + 1}. ${info}`).join("\n")}
 
 Please call the create-wallet function again with these parameters filled in.`,
-             },
-           ],
-         };
-       }
+            },
+          ],
+        };
+      }
 
-       const commandResult = await walletCommand(
-         walletOption,
-         finalPassword,
-         walletData,
-         walletName,
-         replaceCurrentWallet
-       );
-       if (commandResult?.success) {
-         const walletConfigJson = JSON.stringify(commandResult.walletsData, null, 2);
-         
-         return {
-           content: [
-             {
-               type: "text",
-               text: `✅ Successfully executed: ${walletOption}
+      const commandResult = await walletCommand(
+        walletOption,
+        finalPassword,
+        walletData,
+        walletName,
+        replaceCurrentWallet
+      );
+      if (commandResult?.success) {
+        const walletConfigJson = JSON.stringify(
+          commandResult.walletsData,
+          null,
+          2
+        );
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `✅ Successfully executed: ${walletOption}
 
 **🎉 Wallet Created Successfully!**
 
@@ -295,22 +338,22 @@ To interact with your wallets in the future, you will need **TWO files**:
 - Keep your password file especially secure
 
 Your wallet operation has been completed. What would you like to do next?`,
-             },
-           ],
-         };
-       }
+            },
+          ],
+        };
+      }
 
-       return {
-         content: [
-           {
-             type: "text",
-             text: `❌ Failed to execute: ${walletOption}
+      return {
+        content: [
+          {
+            type: "text",
+            text: `❌ Failed to execute: ${walletOption}
 
 Error: ${commandResult?.error || "Unknown error occurred"}
 
 Please try again or select a different option.`,
-           },
-         ],
+          },
+        ],
       };
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
