@@ -40,6 +40,27 @@ declare module '@rsksmart/rsk-cli/dist/src/commands/balance.js' {
   } | undefined>;
 }
 
+declare module '@rsksmart/rsk-cli/dist/src/commands/tx.js' {
+  export function txCommand(
+    testnet: boolean,
+    txid: string,
+    _isExternal?: boolean
+  ): Promise<{
+    success?: boolean;
+    data?: {
+      txId: string;
+      blockHash: string;
+      blockNumber: string;
+      gasUsed: string;
+      status: string;
+      from: string;
+      to: string | null;
+      network: string;
+    };
+    error?: string;
+  } | undefined>;
+} 
+
 declare module '@rsksmart/rsk-cli/dist/src/commands/transfer.js' {
   export function transferCommand(testnet: boolean, address: string, value: number, wallet?: string): Promise<void>;
 }
@@ -62,4 +83,4 @@ declare module '@rsksmart/rsk-cli/dist/src/commands/contract.js' {
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/selectAddress.js' {
   export function selectAddress(): Promise<string>;
-} 
+}

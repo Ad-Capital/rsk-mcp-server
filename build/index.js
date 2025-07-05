@@ -3,6 +3,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { walletCommand } from "@rsksmart/rsk-cli/dist/src/commands/wallet.js";
 import { balanceCommand } from "@rsksmart/rsk-cli/dist/src/commands/balance.js";
+import { txCommand } from "@rsksmart/rsk-cli/dist/src/commands/tx.js";
 const createWalletOptions = [
     "🆕 Create a new wallet",
     "🔑 Import existing wallet",
@@ -341,7 +342,6 @@ Please call the check-balance function again with these parameters filled in.`,
                 ],
             };
         }
-        // Process walletData if provided as string
         let processedWalletData = walletData;
         if (typeof walletData === 'string') {
             try {
@@ -447,7 +447,6 @@ server.tool("use-wallet-from-creation", "Use wallet data directly from a previou
     walletCreationResult: z.string().describe("The complete JSON result from create-wallet function including walletsData")
 }, async ({ testnet, token, customTokenAddress, walletCreationResult }) => {
     try {
-        // Parse the wallet creation result
         let walletResult;
         try {
             walletResult = JSON.parse(walletCreationResult);
@@ -464,7 +463,6 @@ Error: ${error instanceof Error ? error.message : String(error)}`
                     }]
             };
         }
-        // Extract walletData from the result
         const walletData = walletResult.walletsData;
         if (!walletData || !walletData.wallets || !walletData.currentWallet) {
             return {
@@ -476,11 +474,7 @@ The wallet creation result doesn't contain valid wallet data. Please ensure you'
                     }]
             };
         }
-        // Call balance command with the extracted wallet data
-        const result = await balanceCommand(testnet, undefined, // use current wallet
-        undefined, // holderAddress
-        true, // _isExternal
-        token, customTokenAddress, walletData);
+        const result = await balanceCommand(testnet, undefined, undefined, true, token, customTokenAddress, walletData);
         if (result?.success && result.data) {
             const { data } = result;
             return {
@@ -524,6 +518,135 @@ Error: ${errorMsg}
 
 Please ensure you're providing the complete wallet creation result.`
                 }]
+        };
+    }
+});
+server.tool("check-transaction", "Check the status and details of a transaction on Rootstock blockchain using the transaction hash", {
+    testnet: z
+        .boolean()
+        .describe("Use testnet (true) or mainnet (false)"),
+    txid: z
+        .string()
+        .describe("Transaction hash (with or without 0x prefix) to check status and details"),
+}, async ({ testnet, txid }) => {
+    try {
+        // Validate txid parameter
+        if (!txid || txid.trim().length === 0) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `❌ **Transaction ID Required**
+
+Please provide a valid transaction hash to check.
+
+**Example:** 
+- \`0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef\`
+- \`1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef\`
+
+The transaction hash should be 64 characters long (without 0x prefix) or 66 characters (with 0x prefix).`,
+                    },
+                ],
+            };
+        }
+        const cleanTxid = txid.trim();
+        // Basic validation of transaction hash format
+        const txidRegex = /^(0x)?[a-fA-F0-9]{64}$/;
+        if (!txidRegex.test(cleanTxid)) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `❌ **Invalid Transaction Hash Format**
+
+The provided transaction hash appears to be invalid.
+
+**Provided:** \`${cleanTxid}\`
+
+**Expected format:**
+- 64 hexadecimal characters (without 0x prefix)
+- 66 hexadecimal characters (with 0x prefix)
+
+**Example:** \`0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef\``,
+                    },
+                ],
+            };
+        }
+        // Call txCommand to get transaction details
+        const result = await txCommand(testnet, cleanTxid, true);
+        if (result?.success && result.data) {
+            const { data } = result;
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `✅ **Transaction Found**
+
+🔑 **Transaction ID**: \`${data.txId}\`
+✅ **Status**: ${data.status === "Success" ? "✅ Success" : "❌ Failed"}
+🌐 **Network**: ${data.network}
+
+**📊 Transaction Details:**
+🔗 **Block Hash**: \`${data.blockHash}\`
+🧱 **Block Number**: ${data.blockNumber}
+⛽ **Gas Used**: ${data.gasUsed}
+
+**👥 Addresses:**
+📤 **From**: \`${data.from}\`
+📥 **To**: \`${data.to || "Contract Creation"}\`
+
+**🔍 View on Explorer:**
+${testnet
+                            ? `- **Rootstock Testnet Explorer**: https://explorer.testnet.rsk.co/tx/${data.txId}`
+                            : `- **Rootstock Mainnet Explorer**: https://explorer.rsk.co/tx/${data.txId}`}
+
+What would you like to do next?`,
+                    },
+                ],
+            };
+        }
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: `❌ **Transaction Not Found**
+
+Error: ${result?.error || "Transaction not found or unknown error occurred"}
+
+**Possible reasons:**
+- Transaction hash is incorrect
+- Transaction doesn't exist on the ${testnet ? "testnet" : "mainnet"} network
+- Transaction is still pending (try again in a few moments)
+- You're checking on the wrong network (try switching between mainnet/testnet)
+
+**Please verify:**
+- The transaction hash is correct
+- You're checking the correct network (${testnet ? "testnet" : "mainnet"})
+- The transaction has been confirmed
+
+Try again with a different transaction hash or check the correct network.`,
+                },
+            ],
+        };
+    }
+    catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: `❌ **Error Checking Transaction**
+
+Error: ${errorMsg}
+
+**Please verify:**
+- The transaction hash format is correct
+- You have network connectivity
+- The Rootstock network is accessible
+
+Try again with a valid transaction hash.`,
+                },
+            ],
         };
     }
 });
