@@ -310,3 +310,135 @@ Error: ${content}
 
 Try again with a valid transaction hash.`;
 }
+
+export function returnABIContentRequired() {
+  return `📄 **Contract ABI Required**: Please provide the contract ABI JSON content.
+
+**Format expected:**
+\`\`\`json
+[
+  {
+    "inputs": [],
+    "name": "myFunction",
+    "outputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
+\`\`\`
+
+The ABI should be a valid JSON array containing the contract interface.`;
+}
+
+export function returnBytecodeContentRequired() {
+  return `🔧 **Contract Bytecode Required**: Please provide the contract bytecode.
+
+**Format expected:**
+- Hexadecimal string (with or without 0x prefix)
+- Example: "0x608060405234801561001057600080fd5b50..."
+
+You can get this from your contract compilation output.`;
+}
+
+export function returnToDeployContract(content: string, args?: string[]) {
+  if (!args) return content || "Missing information for contract deployment";
+
+  return `To deploy the contract, I need the following information:
+
+${args.map((info, index) => `${index + 1}. ${info}`).join("\n")}
+
+Please call the deploy-contract function again with these parameters filled in.`;
+}
+
+export function returnContractDeployedSuccessfully(content: string, data: any = null) {
+  if (!data) return content;
+
+  return `🎉 **Contract Deployed Successfully!**
+
+📍 **Contract Address**: \`${data.contractAddress}\`
+🔑 **Transaction Hash**: \`${data.transactionHash}\`
+🌐 **Network**: ${data.network}
+
+**🔍 View on Explorer:**
+${data.explorerUrl}
+
+**📋 Important Notes:**
+- Save the contract address for future interactions
+- The contract is now live on ${data.network}
+- You can interact with it using the contract address and ABI
+
+**Next Steps:**
+- Test your contract functions
+- Verify the contract if needed
+- Interact with the contract using other tools
+
+What would you like to do next?`;
+}
+
+export function returnErrorDeployingContract(content: string) {
+  return `❌ **Contract Deployment Failed**
+
+Error: ${content}
+
+**Common issues:**
+- Insufficient rBTC balance for gas fees
+- Invalid ABI or bytecode format
+- Constructor arguments mismatch
+- Network connectivity issues
+- Wallet not properly configured
+
+**Please verify:**
+- Your wallet has sufficient rBTC for gas fees
+- The ABI is a valid JSON array
+- The bytecode is valid hexadecimal
+- Constructor arguments match the contract constructor
+- You're connected to the correct network
+
+Try again with corrected parameters.`;
+}
+
+export function returnErrorInvalidABI(content: string) {
+  return `❌ **Invalid ABI Format**
+
+The provided ABI is not valid JSON or is not properly formatted.
+
+Error: ${content}
+
+**Expected format:**
+\`\`\`json
+[
+  {
+    "inputs": [...],
+    "name": "functionName",
+    "outputs": [...],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
+\`\`\`
+
+Please ensure the ABI is a valid JSON array.`;
+}
+
+export function returnErrorInvalidBytecode(content: string) {
+  return `❌ **Invalid Bytecode Format**
+
+The provided bytecode is not valid.
+
+**Provided:** \`${content.length > 100 ? content.substring(0, 100) + "..." : content}\`
+
+**Expected format:**
+- Hexadecimal string (with or without 0x prefix)
+- Should start with "0x608060405..." or similar
+- Must be valid compiled contract bytecode
+
+Please provide valid contract bytecode from your compilation output.`;
+}
+
+export function returnErrorMissingWalletData() {
+  return `💼 **Wallet Information**: Please provide either 'walletData' (your complete wallet configuration) or 'walletName' (name of an existing wallet).`;
+}
+
+export function returnErrorMissingWalletPassword() {
+  return `🔒 **Wallet Password**: Password is required when using walletData to decrypt your wallet.`;
+}

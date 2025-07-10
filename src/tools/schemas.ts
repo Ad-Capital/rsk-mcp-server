@@ -94,3 +94,41 @@ export const checkTransactionSchema = z.object({
       "Transaction hash (with or without 0x prefix) to check status and details"
     ),
 });
+
+export const deployContractSchema = z.object({
+  testnet: z.boolean().describe("Use testnet (true) or mainnet (false)"),
+  abiContent: z
+    .string()
+    .describe(
+      "JSON content of the contract ABI - paste the complete ABI JSON array"
+    ),
+  bytecodeContent: z
+    .string()
+    .describe(
+      "Hexadecimal bytecode of the contract - with or without 0x prefix"
+    ),
+  constructorArgs: z
+    .array(z.any())
+    .optional()
+    .describe(
+      "Array of constructor arguments for the contract deployment (optional)"
+    ),
+  walletName: z
+    .string()
+    .optional()
+    .describe(
+      "Specific wallet name to deploy from - uses current wallet if not provided"
+    ),
+  walletData: z
+    .union([z.custom<WalletData>(), z.string()])
+    .optional()
+    .describe(
+      "Your previously saved wallet configuration file content (my-wallets.json) - required if you want to use specific wallet data"
+    ),
+  walletPassword: z
+    .string()
+    .optional()
+    .describe(
+      "Password to decrypt the wallet - required when using walletData"
+    ),
+});

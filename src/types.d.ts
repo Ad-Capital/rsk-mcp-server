@@ -66,7 +66,25 @@ declare module '@rsksmart/rsk-cli/dist/src/commands/transfer.js' {
 }
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/deploy.js' {
-  export function deployCommand(abi: string, bytecode: string, testnet: boolean, args: any[], wallet?: string): Promise<void>;
+  export function deployCommand(
+    abiPath: string,
+    bytecodePath: string,
+    testnet: boolean,
+    args?: any[],
+    name?: string,
+    _isExternal?: boolean,
+    _walletsData?: any,
+    _password?: string
+  ): Promise<{
+    success?: boolean;
+    data?: {
+      contractAddress: string;
+      transactionHash: string;
+      network: string;
+      explorerUrl: string;
+    };
+    error?: string;
+  } | undefined>;
 }
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/bridge.js' {

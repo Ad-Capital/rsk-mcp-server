@@ -33,4 +33,9 @@ export enum ResponseType {
   TransactionFound = "transactionFound",
   ErrorTxNotFound = "errorTxNotFound",
   ErrorCheckingTransaction = "errorCheckingTransaction",
+  ToDeployContract = "toDeployContract",
+  ContractDeployedSuccessfully = "contractDeployedSuccessfully",
+  ErrorDeployingContract = "errorDeployingContract",
+  ErrorInvalidABI = "errorInvalidABI",
+  ErrorInvalidBytecode = "errorInvalidBytecode",
 }

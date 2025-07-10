@@ -4,17 +4,40 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { walletCommand } from "@rsksmart/rsk-cli/dist/src/commands/wallet.js";
 import { balanceCommand } from "@rsksmart/rsk-cli/dist/src/commands/balance.js";
 import { txCommand } from "@rsksmart/rsk-cli/dist/src/commands/tx.js";
+import { deployCommand } from "@rsksmart/rsk-cli/dist/src/commands/deploy.js";
 import { createWalletOptions } from "./tools/constants.js";
 import {
   checkBalanceSchema,
   checkTransactionSchema,
   createWalletSchema,
+  deployContractSchema,
   useWalletFromCreationSchema,
 } from "./tools/schemas.js";
 import { extractPasswordFromFile } from "./tools/handlers.js";
 import { provideResponse } from "./handlers/responsesHandler.js";
 import { ResponseType } from "./tools/types.js";
-import { returnCheckBalanceSuccess, returnCustomTokenAddress, returnErrorCheckingBalance, returnErrorInvalidWalletData, returnErrorMissingInfo, returnErrorTryAgain, returnErrorTxNotFound, returnReplaceCurrentWallet, returnSecurePasswordMethod, returnToCheckBalance, returnTokenSelectionOptions, returnTransactionFound, returnWalletConfigurationFile, returnWalletCreatedSuccessfully, returnWalletName } from "./utils/responses.js";
+import {
+  returnABIContentRequired,
+  returnBytecodeContentRequired,
+  returnCheckBalanceSuccess,
+  returnContractDeployedSuccessfully,
+  returnCustomTokenAddress,
+  returnErrorInvalidWalletData,
+  returnErrorMissingInfo,
+  returnErrorMissingWalletData,
+  returnErrorMissingWalletPassword,
+  returnErrorTryAgain,
+  returnErrorTxNotFound,
+  returnReplaceCurrentWallet,
+  returnSecurePasswordMethod,
+  returnToCheckBalance,
+  returnToDeployContract,
+  returnTokenSelectionOptions,
+  returnTransactionFound,
+  returnWalletConfigurationFile,
+  returnWalletCreatedSuccessfully,
+  returnWalletName,
+} from "./utils/responses.js";
 
 const server = new McpServer({
   name: "devx-mcp-server",
@@ -348,6 +371,111 @@ server.tool(
       return provideResponse(
         errorMsg,
         ResponseType.ErrorCheckingTransaction
+      );
+    }
+  }
+);
+
+server.tool(
+  "deploy-contract",
+  "Deploy a smart contract to the Rootstock blockchain using ABI and bytecode",
+  deployContractSchema.shape,
+  async ({ testnet, abiContent, bytecodeContent, constructorArgs, walletName, walletData, walletPassword }) => {
+    try {
+      const missingInfo = [];
+
+      if (!abiContent) {
+        missingInfo.push(returnABIContentRequired());
+      }
+
+      if (!bytecodeContent) {
+        missingInfo.push(returnBytecodeContentRequired());
+      }
+
+      if (!walletData && !walletName) {
+        missingInfo.push(returnErrorMissingWalletData());
+      }
+
+      if (walletData && !walletPassword) {
+        missingInfo.push(returnErrorMissingWalletPassword());
+      }
+
+      if (missingInfo.length > 0) {
+        return provideResponse(
+          returnToDeployContract("", missingInfo),
+          ResponseType.ToDeployContract
+        );
+      }
+
+      let parsedABI;
+      try {
+        parsedABI = JSON.parse(abiContent);
+        if (!Array.isArray(parsedABI)) {
+          return provideResponse(
+            "ABI must be a JSON array",
+            ResponseType.ErrorInvalidABI
+          );
+        }
+      } catch (error) {
+        return provideResponse(
+          error instanceof Error ? error.message : String(error),
+          ResponseType.ErrorInvalidABI
+        );
+      }
+
+      let cleanBytecode = bytecodeContent.trim();
+      if (!cleanBytecode.startsWith("0x")) {
+        cleanBytecode = `0x${cleanBytecode}`;
+      }
+
+      const bytecodeRegex = /^0x[a-fA-F0-9]+$/;
+      if (!bytecodeRegex.test(cleanBytecode)) {
+        return provideResponse(
+          cleanBytecode,
+          ResponseType.ErrorInvalidBytecode
+        );
+      }
+
+      let processedWalletData = walletData;
+      if (typeof walletData === "string") {
+        try {
+          processedWalletData = JSON.parse(walletData);
+        } catch (error) {
+          return provideResponse(
+            error instanceof Error ? error.message : String(error),
+            ResponseType.ErrorInvalidWalletData
+          );
+        }
+      }
+
+      const result = await deployCommand(
+        JSON.stringify(parsedABI),
+        cleanBytecode,
+        testnet,
+        constructorArgs || [],
+        walletName,
+        true,
+        processedWalletData,
+        walletPassword
+      );
+
+      if (result?.success && result.data) {
+        const { data } = result;
+
+        return provideResponse(
+          returnContractDeployedSuccessfully("", data),
+          ResponseType.ContractDeployedSuccessfully
+        );
+      }
+
+      return provideResponse(
+        result?.error || "Contract deployment failed with unknown error",
+        ResponseType.ErrorDeployingContract
+      );
+    } catch (error) {
+      return provideResponse(
+        error instanceof Error ? error.message : String(error),
+        ResponseType.ErrorDeployingContract
       );
     }
   }

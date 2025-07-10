@@ -1,8 +1,12 @@
 import { MCPResponse, ResponseType } from "../tools/types.js";
 import {
   returnCheckBalanceSuccess,
+  returnContractDeployedSuccessfully,
   returnErrorCheckingBalance,
   returnErrorCheckingTransaction,
+  returnErrorDeployingContract,
+  returnErrorInvalidABI,
+  returnErrorInvalidBytecode,
   returnErrorInvalidWalletData,
   returnErrorMissingInfo,
   returnErrorReadingPasswordFile,
@@ -12,6 +16,7 @@ import {
   returnErrorTxNotFound,
   returnInteractionResponse,
   returnToCheckBalance,
+  returnToDeployContract,
   returnTransactionFound,
   returnWalletCreatedSuccessfully,
 } from "../utils/responses.js";
@@ -61,6 +66,16 @@ function responseText(content: string, type: ResponseType) {
       return returnErrorTxNotFound(content);
     case ResponseType.ErrorCheckingTransaction:
       return returnErrorCheckingTransaction(content);
+    case ResponseType.ToDeployContract:
+      return returnToDeployContract(content);
+    case ResponseType.ContractDeployedSuccessfully:
+      return returnContractDeployedSuccessfully(content);
+    case ResponseType.ErrorDeployingContract:
+      return returnErrorDeployingContract(content);
+    case ResponseType.ErrorInvalidABI:
+      return returnErrorInvalidABI(content);
+    case ResponseType.ErrorInvalidBytecode:
+      return returnErrorInvalidBytecode(content);
     default:
       return content;
   }
