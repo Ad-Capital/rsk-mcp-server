@@ -132,3 +132,49 @@ export const deployContractSchema = z.object({
       "Password to decrypt the wallet - required when using walletData"
     ),
 });
+
+export const verifyContractSchema = z.object({
+  testnet: z.boolean().describe("Use testnet (true) or mainnet (false)"),
+  contractAddress: z
+    .string()
+    .describe(
+      "Contract address to verify (0x... format)"
+    ),
+  contractName: z
+    .string()
+    .describe(
+      "Name of the contract as defined in the source code"
+    ),
+  jsonContent: z
+    .string()
+    .describe(
+      "JSON Standard Input content from Solidity compilation - contains solcLongVersion and input fields"
+    ),
+  constructorArgs: z
+    .array(z.any())
+    .optional()
+    .describe(
+      "Array of constructor arguments used during deployment (optional)"
+    ),
+});
+
+export const readContractSchema = z.object({
+  testnet: z.boolean().describe("Use testnet (true) or mainnet (false)"),
+  contractAddress: z
+    .string()
+    .describe(
+      "Contract address to read from (0x... format) - must be a verified contract"
+    ),
+  functionName: z
+    .string()
+    .optional()
+    .describe(
+      "Name of the view/pure function to call - if not provided, available functions will be listed"
+    ),
+  functionArgs: z
+    .array(z.any())
+    .optional()
+    .describe(
+      "Array of arguments for the function call (required if the function has parameters)"
+    ),
+});

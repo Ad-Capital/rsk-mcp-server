@@ -5,13 +5,17 @@ import { walletCommand } from "@rsksmart/rsk-cli/dist/src/commands/wallet.js";
 import { balanceCommand } from "@rsksmart/rsk-cli/dist/src/commands/balance.js";
 import { txCommand } from "@rsksmart/rsk-cli/dist/src/commands/tx.js";
 import { deployCommand } from "@rsksmart/rsk-cli/dist/src/commands/deploy.js";
+import { verifyCommand } from "@rsksmart/rsk-cli/dist/src/commands/verify.js";
+import { ReadContract } from "@rsksmart/rsk-cli/dist/src/commands/contract.js";
 import { createWalletOptions } from "./tools/constants.js";
 import {
   checkBalanceSchema,
   checkTransactionSchema,
   createWalletSchema,
   deployContractSchema,
+  readContractSchema,
   useWalletFromCreationSchema,
+  verifyContractSchema,
 } from "./tools/schemas.js";
 import { extractPasswordFromFile } from "./tools/handlers.js";
 import { provideResponse } from "./handlers/responsesHandler.js";
@@ -20,18 +24,27 @@ import {
   returnABIContentRequired,
   returnBytecodeContentRequired,
   returnCheckBalanceSuccess,
+  returnContractAddressRequired,
   returnContractDeployedSuccessfully,
+  returnContractNameRequired,
+  returnContractReadSuccessfully,
+  returnContractVerifiedSuccessfully,
   returnCustomTokenAddress,
   returnErrorInvalidWalletData,
   returnErrorMissingInfo,
   returnErrorMissingWalletData,
   returnErrorMissingWalletPassword,
+  returnErrorNoReadFunctions,
   returnErrorTryAgain,
   returnErrorTxNotFound,
+  returnFunctionNameRequired,
+  returnJSONContentRequired,
   returnReplaceCurrentWallet,
   returnSecurePasswordMethod,
   returnToCheckBalance,
   returnToDeployContract,
+  returnToReadContract,
+  returnToVerifyContract,
   returnTokenSelectionOptions,
   returnTransactionFound,
   returnWalletConfigurationFile,
@@ -476,6 +489,169 @@ server.tool(
       return provideResponse(
         error instanceof Error ? error.message : String(error),
         ResponseType.ErrorDeployingContract
+      );
+    }
+  }
+);
+
+server.tool(
+  "verify-contract",
+  "Verify a smart contract on the Rootstock blockchain using source code and compilation metadata",
+  verifyContractSchema.shape,
+  async ({ testnet, contractAddress, contractName, jsonContent, constructorArgs }) => {
+    try {
+      const missingInfo = [];
+
+      if (!contractAddress) {
+        missingInfo.push(returnContractAddressRequired());
+      }
+
+      if (!contractName) {
+        missingInfo.push(returnContractNameRequired());
+      }
+
+      if (!jsonContent) {
+        missingInfo.push(returnJSONContentRequired());
+      }
+
+      if (missingInfo.length > 0) {
+        return provideResponse(
+          returnToVerifyContract("", missingInfo),
+          ResponseType.ToVerifyContract
+        );
+      }
+
+      const addressRegex = /^0x[a-fA-F0-9]{40}$/;
+      if (!addressRegex.test(contractAddress)) {
+        return provideResponse(
+          contractAddress,
+          ResponseType.ErrorInvalidContractAddress
+        );
+      }
+
+      let parsedJSON;
+      try {
+        parsedJSON = JSON.parse(jsonContent);
+        if (!parsedJSON.hasOwnProperty("solcLongVersion") || !parsedJSON.hasOwnProperty("input")) {
+          return provideResponse(
+            "Missing required fields: solcLongVersion and input",
+            ResponseType.ErrorInvalidJSON
+          );
+        }
+      } catch (error) {
+        return provideResponse(
+          error instanceof Error ? error.message : String(error),
+          ResponseType.ErrorInvalidJSON
+        );
+      }
+
+      // Call verify command
+      const result = await verifyCommand(
+        jsonContent,           // jsonPath parameter contains JSON content when _isExternal is true
+        contractAddress,
+        contractName,
+        testnet,
+        constructorArgs || [],
+        true                   // _isExternal = true
+      );
+
+      if (result?.success && result.data) {
+        const { data } = result;
+
+        return provideResponse(
+          returnContractVerifiedSuccessfully("", data),
+          ResponseType.ContractVerifiedSuccessfully
+        );
+      }
+
+      return provideResponse(
+        result?.error || "Contract verification failed with unknown error",
+        ResponseType.ErrorVerifyingContract
+      );
+    } catch (error) {
+      return provideResponse(
+        error instanceof Error ? error.message : String(error),
+        ResponseType.ErrorVerifyingContract
+      );
+    }
+  }
+);
+
+server.tool(
+  "read-contract",
+  "Read data from a verified smart contract on the Rootstock blockchain by calling view/pure functions",
+  readContractSchema.shape,
+  async ({ testnet, contractAddress, functionName, functionArgs }) => {
+    try {
+      const missingInfo = [];
+
+      if (!contractAddress) {
+        missingInfo.push(returnContractAddressRequired());
+      }
+
+      if (missingInfo.length > 0) {
+        return provideResponse(
+          returnToReadContract("", missingInfo),
+          ResponseType.ToReadContract
+        );
+      }
+
+      const addressRegex = /^0x[a-fA-F0-9]{40}$/;
+      if (!addressRegex.test(contractAddress)) {
+        return provideResponse(
+          contractAddress,
+          ResponseType.ErrorInvalidContractAddress
+        );
+      }
+
+      const result = await ReadContract(
+        contractAddress,
+        testnet,
+        true,
+        functionName,
+        functionArgs
+      );
+
+      if (result?.success && result.data) {
+        const { data } = result;
+
+        return provideResponse(
+          returnContractReadSuccessfully("", data),
+          ResponseType.ContractReadSuccessfully
+        );
+      }
+
+      if (result?.error) {
+        if (result.error.includes("verification not found") || result.error.includes("not verified")) {
+          return provideResponse(
+            contractAddress,
+            ResponseType.ErrorContractNotVerified
+          );
+        }
+
+        if (result.error.includes("Function name is required")) {
+          return provideResponse(
+            returnFunctionNameRequired(),
+            ResponseType.ToReadContract
+          );
+        }
+
+        if (result.error.includes("No read functions found")) {
+          return provideResponse(
+            returnErrorNoReadFunctions(),
+            ResponseType.ErrorReadingContract
+          );
+        }
+      }
+
+      return provideResponse(
+        result?.error || "Contract reading failed with unknown error",
+        ResponseType.ErrorReadingContract
+      );
+    } catch (error) {
+      return provideResponse(
+        error instanceof Error ? error.message : String(error),
+        ResponseType.ErrorReadingContract
       );
     }
   }

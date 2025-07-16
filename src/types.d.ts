@@ -102,3 +102,45 @@ declare module '@rsksmart/rsk-cli/dist/src/commands/contract.js' {
 declare module '@rsksmart/rsk-cli/dist/src/commands/selectAddress.js' {
   export function selectAddress(): Promise<string>;
 }
+
+declare module '@rsksmart/rsk-cli/dist/src/commands/verify.js' {
+  export function verifyCommand(
+    jsonPath: string,
+    address: string,
+    name: string,
+    testnet: boolean,
+    args?: any[],
+    _isExternal?: boolean
+  ): Promise<{
+    success?: boolean;
+    data?: {
+      contractAddress: string;
+      contractName: string;
+      network: string;
+      explorerUrl: string;
+      verified: boolean;
+      alreadyVerified?: boolean;
+    };
+    error?: string;
+  } | undefined>;
+}
+
+declare module '@rsksmart/rsk-cli/dist/src/commands/contract.js' {
+  export function ReadContract(
+    uppercaseAddress: string,
+    testnet: boolean,
+    _isExternal?: boolean,
+    _functionName?: string,
+    _args?: any[]
+  ): Promise<{
+    success?: boolean;
+    data?: {
+      contractAddress: string;
+      network: string;
+      functionName: string;
+      result: any;
+      explorerUrl: string;
+    };
+    error?: string;
+  } | undefined>;
+}

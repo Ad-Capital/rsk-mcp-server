@@ -1,22 +1,32 @@
 import { MCPResponse, ResponseType } from "../tools/types.js";
 import {
+  returnAvailableFunctions,
   returnCheckBalanceSuccess,
   returnContractDeployedSuccessfully,
+  returnContractReadSuccessfully,
+  returnContractVerifiedSuccessfully,
   returnErrorCheckingBalance,
   returnErrorCheckingTransaction,
+  returnErrorContractNotVerified,
   returnErrorDeployingContract,
   returnErrorInvalidABI,
   returnErrorInvalidBytecode,
+  returnErrorInvalidContractAddress,
+  returnErrorInvalidJSON,
   returnErrorInvalidWalletData,
   returnErrorMissingInfo,
+  returnErrorReadingContract,
   returnErrorReadingPasswordFile,
   returnErrorTryAgain,
   returnErrorTXHashInvalid,
   returnErrorTXIdRequired,
   returnErrorTxNotFound,
+  returnErrorVerifyingContract,
   returnInteractionResponse,
   returnToCheckBalance,
   returnToDeployContract,
+  returnToReadContract,
+  returnToVerifyContract,
   returnTransactionFound,
   returnWalletCreatedSuccessfully,
 } from "../utils/responses.js";
@@ -76,6 +86,26 @@ function responseText(content: string, type: ResponseType) {
       return returnErrorInvalidABI(content);
     case ResponseType.ErrorInvalidBytecode:
       return returnErrorInvalidBytecode(content);
+    case ResponseType.ToVerifyContract:
+      return returnToVerifyContract(content);
+    case ResponseType.ContractVerifiedSuccessfully:
+      return returnContractVerifiedSuccessfully(content);
+    case ResponseType.ErrorVerifyingContract:
+      return returnErrorVerifyingContract(content);
+    case ResponseType.ErrorInvalidContractAddress:
+      return returnErrorInvalidContractAddress(content);
+    case ResponseType.ErrorInvalidJSON:
+      return returnErrorInvalidJSON(content);
+    case ResponseType.ToReadContract:
+      return returnToReadContract(content);
+    case ResponseType.ContractReadSuccessfully:
+      return returnContractReadSuccessfully(content);
+    case ResponseType.ErrorReadingContract:
+      return returnErrorReadingContract(content);
+    case ResponseType.ErrorContractNotVerified:
+      return returnErrorContractNotVerified(content);
+    case ResponseType.AvailableFunctions:
+      return returnAvailableFunctions(content);
     default:
       return content;
   }

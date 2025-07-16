@@ -442,3 +442,313 @@ export function returnErrorMissingWalletData() {
 export function returnErrorMissingWalletPassword() {
   return `🔒 **Wallet Password**: Password is required when using walletData to decrypt your wallet.`;
 }
+
+export function returnContractAddressRequired() {
+  return `📍 **Contract Address Required**: Please provide the contract address to verify.
+
+**Format expected:**
+- Ethereum address format: "0x1234567890abcdef1234567890abcdef12345678"
+- Must be a valid deployed contract address
+
+**Example:** "0x1234567890abcdef1234567890abcdef12345678"`;
+}
+
+export function returnContractNameRequired() {
+  return `📝 **Contract Name Required**: Please provide the name of the contract as defined in the source code.
+
+**Format expected:**
+- Exact name from your Solidity contract
+- Case-sensitive
+
+**Example:** "MyContract", "SimpleStorage", "ERC20Token"`;
+}
+
+export function returnJSONContentRequired() {
+  return `📄 **JSON Standard Input Required**: Please provide the JSON Standard Input from your Solidity compilation.
+
+**Format expected:**
+\`\`\`json
+{
+  "solcLongVersion": "0.8.19+commit.7dd6d404.Emscripten.clang",
+  "input": {
+    "language": "Solidity",
+    "sources": {
+      "contracts/MyContract.sol": {
+        "content": "pragma solidity ^0.8.0;..."
+      }
+    },
+    "settings": {
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "*": ["*"]
+        }
+      }
+    }
+  }
+}
+\`\`\`
+
+You can get this from your Hardhat/Truffle compilation artifacts or Remix IDE.`;
+}
+
+export function returnToVerifyContract(content: string, args?: string[]) {
+  if (!args) return content || "Missing information for contract verification";
+
+  return `To verify the contract, I need the following information:
+
+${args.map((info, index) => `${index + 1}. ${info}`).join("\n")}
+
+Please call the verify-contract function again with these parameters filled in.`;
+}
+
+export function returnContractVerifiedSuccessfully(content: string, data: any = null) {
+  if (!data) return content;
+
+  const statusMessage = data.alreadyVerified 
+    ? "✅ **Contract Already Verified**" 
+    : "🎉 **Contract Verified Successfully!**";
+
+  return `${statusMessage}
+
+📍 **Contract Address**: \`${data.contractAddress}\`
+📝 **Contract Name**: ${data.contractName}
+🌐 **Network**: ${data.network}
+✅ **Status**: ${data.verified ? "Verified" : "Not Verified"}
+
+**🔍 View on Explorer:**
+${data.explorerUrl}
+
+**📋 Verification Details:**
+- The contract source code has been successfully verified
+- You can now view the source code on the explorer
+- Contract interactions will show readable function names
+
+**Next Steps:**
+- Your contract is now publicly verifiable
+- Users can inspect the source code
+- Enhanced transparency and trust
+
+What would you like to do next?`;
+}
+
+export function returnErrorVerifyingContract(content: string) {
+  return `❌ **Contract Verification Failed**
+
+Error: ${content}
+
+**Common issues:**
+- Contract address doesn't exist or is invalid
+- JSON Standard Input doesn't match deployed bytecode
+- Constructor arguments mismatch
+- Contract is already verified
+- Network connectivity issues
+- Solidity version mismatch
+
+**Please verify:**
+- The contract address is correct and deployed
+- The JSON Standard Input matches the deployed contract
+- Constructor arguments are provided if the contract has them
+- You're verifying on the correct network (testnet/mainnet)
+- The source code matches exactly what was deployed
+
+Try again with corrected parameters.`;
+}
+
+export function returnErrorInvalidContractAddress(content: string) {
+  return `❌ **Invalid Contract Address**
+
+The provided contract address is not valid.
+
+**Provided:** \`${content}\`
+
+**Expected format:**
+- Ethereum address format (42 characters including 0x prefix)
+- Example: "0x1234567890abcdef1234567890abcdef12345678"
+- Must be a valid deployed contract address
+
+Please provide a valid contract address.`;
+}
+
+export function returnErrorInvalidJSON(content: string) {
+  return `❌ **Invalid JSON Standard Input**
+
+The provided JSON content is not valid or is missing required fields.
+
+Error: ${content}
+
+**Required fields:**
+- \`solcLongVersion\`: Solidity compiler version
+- \`input\`: Compilation input with sources and settings
+
+**Example structure:**
+\`\`\`json
+{
+  "solcLongVersion": "0.8.19+commit.7dd6d404.Emscripten.clang",
+  "input": {
+    "language": "Solidity",
+    "sources": { ... },
+    "settings": { ... }
+  }
+}
+\`\`\`
+
+Please provide valid JSON Standard Input from your compilation.`;
+}
+
+export function returnFunctionNameRequired() {
+  return `📝 **Function Name Required**: Please provide the name of the function to call.
+
+**Format expected:**
+- Exact function name from the contract
+- Must be a view or pure function (read-only)
+- Case-sensitive
+
+**Example:** "balanceOf", "totalSupply", "getName"
+
+**Note:** Only verified contracts can be read. The function must be marked as 'view' or 'pure' in the contract.`;
+}
+
+export function returnToReadContract(content: string, args?: string[]) {
+  if (!args) return content || "Missing information for contract reading";
+
+  return `To read from the contract, I need the following information:
+
+${args.map((info, index) => `${index + 1}. ${info}`).join("\n")}
+
+Please call the read-contract function again with these parameters filled in.`;
+}
+
+// Helper function to serialize BigInt values to strings
+function serializeBigInt(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  
+  if (typeof obj === 'bigint') {
+    return obj.toString();
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(serializeBigInt);
+  }
+  
+  if (typeof obj === 'object') {
+    const result: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = serializeBigInt(value);
+    }
+    return result;
+  }
+  
+  return obj;
+}
+
+export function returnContractReadSuccessfully(content: string, data: any = null) {
+  if (!data) return content;
+
+  // Convert BigInt values to strings before serialization
+  const serializedResult = serializeBigInt(data.result);
+
+  return `✅ **Contract Function Called Successfully**
+
+📍 **Contract Address**: \`${data.contractAddress}\`
+📝 **Function Name**: ${data.functionName}
+🌐 **Network**: ${data.network}
+
+**📊 Function Result:**
+\`\`\`
+${JSON.stringify(serializedResult, null, 2)}
+\`\`\`
+
+**🔍 View on Explorer:**
+${data.explorerUrl}
+
+**📋 Details:**
+- Function executed successfully
+- Result returned from blockchain
+- No gas fees for read-only functions
+
+What would you like to do next?`;
+}
+
+export function returnErrorReadingContract(content: string) {
+  return `❌ **Contract Reading Failed**
+
+Error: ${content}
+
+**Common issues:**
+- Contract address doesn't exist or is invalid
+- Contract is not verified
+- Function name doesn't exist or is not view/pure
+- Function arguments are incorrect or missing
+- Network connectivity issues
+
+**Please verify:**
+- The contract address is correct and deployed
+- The contract is verified on the explorer
+- The function name exists and is a read function (view/pure)
+- Function arguments match the expected types and count
+- You're reading from the correct network (testnet/mainnet)
+
+Try again with corrected parameters.`;
+}
+
+export function returnErrorContractNotVerified(content: string) {
+  return `❌ **Contract Not Verified**
+
+The contract at address \`${content}\` is not verified.
+
+**To read from a contract:**
+- The contract must be verified on the Rootstock explorer
+- Verification provides the ABI needed to interact with functions
+
+**Solutions:**
+1. **Verify the contract first** using the \`verify-contract\` function
+2. **Check if you have the correct address** - make sure it's deployed
+3. **Wait for verification** if recently submitted
+
+**Verification Benefits:**
+- Enables function calls through this interface
+- Shows readable source code on explorer
+- Increases trust and transparency
+
+Would you like to verify this contract first?`;
+}
+
+export function returnAvailableFunctions(content: string, functions: any[] = []) {
+  if (functions.length === 0) return content;
+
+  const functionList = functions.map((func, index) => {
+    const inputs = func.inputs?.map((input: any) => `${input.name}: ${input.type}`).join(", ") || "";
+    const outputs = func.outputs?.map((output: any) => output.type).join(", ") || "void";
+    return `${index + 1}. **${func.name}**(${inputs}) → ${outputs}`;
+  }).join("\n");
+
+  return `📋 **Available Read Functions**
+
+The contract has the following view/pure functions available:
+
+${functionList}
+
+**To call a function:**
+- Use the exact function name
+- Provide arguments in the correct order if required
+- Only view/pure functions can be called (no gas fees)
+
+**Example:**
+\`\`\`json
+{
+  "contractAddress": "0x...",
+  "functionName": "balanceOf",
+  "functionArgs": ["0x1234..."]
+}
+\`\`\`
+
+Which function would you like to call?`;
+}
+
+export function returnErrorNoReadFunctions() {
+  return "This contract has no view/pure functions available for reading.";
+}
