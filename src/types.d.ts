@@ -59,7 +59,7 @@ declare module '@rsksmart/rsk-cli/dist/src/commands/tx.js' {
     };
     error?: string;
   } | undefined>;
-} 
+}
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/transfer.js' {
   export function transferCommand(testnet: boolean, address: string, value: number, wallet?: string): Promise<void>;
@@ -101,7 +101,7 @@ declare module '@rsksmart/rsk-cli/dist/src/commands/contract.js' {
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/selectAddress.js' {
   export function selectAddress(): Promise<string>;
-}
+} 
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/verify.js' {
   export function verifyCommand(
@@ -120,6 +120,7 @@ declare module '@rsksmart/rsk-cli/dist/src/commands/verify.js' {
       explorerUrl: string;
       verified: boolean;
       alreadyVerified?: boolean;
+      verificationData?: any;
     };
     error?: string;
   } | undefined>;

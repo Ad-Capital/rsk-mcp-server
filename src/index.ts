@@ -494,6 +494,38 @@ server.tool(
   }
 );
 
+function validateStandardJSON(jsonContent: string): { isValid: boolean; error?: string } {
+  try {
+    const requiredFields = ['solcLongVersion', 'input', 'solcVersion'];
+    
+    if (!jsonContent.trim().startsWith('{') || !jsonContent.trim().endsWith('}')) {
+      return {
+        isValid: false,
+        error: 'JSON must be a valid object'
+      };
+    }
+    
+    const missingFields = requiredFields.filter(field => {
+      const fieldPattern = new RegExp(`"${field}"\\s*:`, 'i');
+      return !fieldPattern.test(jsonContent);
+    });
+    
+    if (missingFields.length > 0) {
+      return {
+        isValid: false,
+        error: `Missing required fields: ${missingFields.join(', ')}`
+      };
+    }
+    
+    return { isValid: true };
+  } catch (error) {
+    return {
+      isValid: false,
+      error: error instanceof Error ? error.message : 'Invalid JSON format'
+    };
+  }
+}
+
 server.tool(
   "verify-contract",
   "Verify a smart contract on the Rootstock blockchain using source code and compilation metadata",
@@ -529,30 +561,21 @@ server.tool(
         );
       }
 
-      let parsedJSON;
-      try {
-        parsedJSON = JSON.parse(jsonContent);
-        if (!parsedJSON.hasOwnProperty("solcLongVersion") || !parsedJSON.hasOwnProperty("input")) {
-          return provideResponse(
-            "Missing required fields: solcLongVersion and input",
-            ResponseType.ErrorInvalidJSON
-          );
-        }
-      } catch (error) {
+      const jsonValidation = validateStandardJSON(jsonContent);
+      if (!jsonValidation.isValid) {
         return provideResponse(
-          error instanceof Error ? error.message : String(error),
+          jsonValidation.error || "Invalid JSON Standard Input format",
           ResponseType.ErrorInvalidJSON
         );
       }
 
-      // Call verify command
       const result = await verifyCommand(
-        jsonContent,           // jsonPath parameter contains JSON content when _isExternal is true
+        jsonContent,
         contractAddress,
         contractName,
         testnet,
         constructorArgs || [],
-        true                   // _isExternal = true
+        true
       );
 
       if (result?.success && result.data) {

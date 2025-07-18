@@ -12,3 +12,4 @@ yarn-error.log*
 //env files
 .env
 build
+MyToken.json

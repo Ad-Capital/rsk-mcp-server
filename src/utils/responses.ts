@@ -466,10 +466,18 @@ export function returnContractNameRequired() {
 export function returnJSONContentRequired() {
   return `📄 **JSON Standard Input Required**: Please provide the JSON Standard Input from your Solidity compilation.
 
-**Format expected:**
+**Required fields in JSON:**
+- \`solcVersion\`: Short Solidity version (e.g., "0.8.22")
+- \`solcLongVersion\`: Full Solidity version (e.g., "0.8.22+commit.4fc1097e")
+- \`input\`: Complete compilation input with sources and settings
+
+**Minimal format expected:**
 \`\`\`json
 {
-  "solcLongVersion": "0.8.19+commit.7dd6d404.Emscripten.clang",
+  "id": "f5ec174c03684c3b3a0bb78eab96df27",
+  "_format": "hh-sol-build-info-1",
+  "solcVersion": "0.8.22",
+  "solcLongVersion": "0.8.22+commit.4fc1097e",
   "input": {
     "language": "Solidity",
     "sources": {
@@ -491,6 +499,8 @@ export function returnJSONContentRequired() {
   }
 }
 \`\`\`
+
+**📌 Note**: The system will automatically optimize large JSON files by keeping only the required fields for efficient verification.
 
 You can get this from your Hardhat/Truffle compilation artifacts or Remix IDE.`;
 }

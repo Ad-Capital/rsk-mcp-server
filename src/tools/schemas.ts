@@ -148,7 +148,7 @@ export const verifyContractSchema = z.object({
   jsonContent: z
     .string()
     .describe(
-      "JSON Standard Input content from Solidity compilation - contains solcLongVersion and input fields"
+      "JSON Standard Input content from Solidity compilation - contains solcLongVersion and input fields, it is not necesary to readd the content, just validate it contains an 'input' field and others. If the file is too large, you can delete the 'output' section to reduce file size while keeping the required compilation metadata."
     ),
   constructorArgs: z
     .array(z.any())
