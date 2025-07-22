@@ -7,7 +7,7 @@ import { txCommand } from "@rsksmart/rsk-cli/dist/src/commands/tx.js";
 import { deployCommand } from "@rsksmart/rsk-cli/dist/src/commands/deploy.js";
 import { verifyCommand } from "@rsksmart/rsk-cli/dist/src/commands/verify.js";
 import { ReadContract } from "@rsksmart/rsk-cli/dist/src/commands/contract.js";
-import { createWalletOptions } from "./tools/constants.js";
+import { createWalletOptions, generalInteractionOptions } from "./tools/constants.js";
 import {
   checkBalanceSchema,
   checkTransactionSchema,
@@ -64,6 +64,18 @@ const server = new McpServer({
 server.tool(
   "start-interaction",
   "Start interaction with the Rootstock CLI functions, start this once someone ask something related to the rootstock (rsk) blockchain",
+  {},
+  async () => {
+    const optionsText = generalInteractionOptions
+      .map((option, index) => `${index + 1}. ${option}`)
+      .join("\n");
+    return provideResponse(optionsText, ResponseType.Interaction);
+  }
+);
+
+server.tool(
+  "start-wallet-interaction", 
+  "Start wallet management interaction. This shows all available wallet operations and management options.",
   {},
   async () => {
     const optionsText = createWalletOptions
