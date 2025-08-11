@@ -6,8 +6,6 @@ export const createWalletSchema = z.object({
   walletOption: z
     .enum(createWalletOptions)
     .describe("The wallet creation option selected by the user"),
-  
-  // Common parameters
   walletPassword: z
     .string()
     .optional()
@@ -20,8 +18,6 @@ export const createWalletSchema = z.object({
     .custom<WalletData>()
     .optional()
     .describe("Your previously saved wallet configuration file content (my-wallets.json) - required for most operations"),
-  
-  // For Create/Import new wallet
   walletName: z
     .string()
     .optional()
@@ -30,20 +26,14 @@ export const createWalletSchema = z.object({
     .boolean()
     .optional()
     .describe("Whether to replace current wallet - for create/import operations"),
-    
-  // For Import existing wallet  
   privateKey: z
     .string()
     .optional()
     .describe("Private key to import - required for 'Import existing wallet' option"),
-    
-  // For Switch wallet
   newMainWallet: z
     .string()
     .optional()
     .describe("Name of wallet to switch to - required for 'Switch wallet' option"),
-    
-  // For Update wallet name
   previousWallet: z
     .string()
     .optional()
@@ -52,8 +42,6 @@ export const createWalletSchema = z.object({
     .string()
     .optional()
     .describe("New name for the wallet - required for 'Update wallet name' option"),
-    
-  // For Delete wallet
   deleteWalletName: z
     .string()
     .optional()
@@ -199,4 +187,31 @@ export const readContractSchema = z.object({
     .describe(
       "Array of arguments for the function call (required if the function has parameters)"
     ),
+});
+
+export const transferTokenSchema = z.object({
+  testnet: z.boolean().describe("Use testnet (true) or mainnet (false)"),
+  toAddress: z
+    .string()
+    .describe("Recipient address for the transfer (0x... format)"),
+  value: z
+    .number()
+    .positive()
+    .describe("Amount to transfer (in token units or RBTC)"),
+  tokenAddress: z
+    .string()
+    .optional()
+    .describe("ERC20 token contract address (optional - if not provided, transfers RBTC)"),
+  walletName: z
+    .string()
+    .optional()
+    .describe("Specific wallet name to use for transfer - uses current wallet if not provided"),
+  walletData: z
+    .custom<WalletData>()
+    .optional()
+    .describe("Your previously saved wallet configuration file content (my-wallets.json)"),
+  walletPassword: z
+    .string()
+    .optional()
+    .describe("Password to decrypt the wallet - required when using walletData"),
 });

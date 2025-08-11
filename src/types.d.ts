@@ -67,7 +67,30 @@ declare module '@rsksmart/rsk-cli/dist/src/commands/tx.js' {
 }
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/transfer.js' {
-  export function transferCommand(testnet: boolean, address: string, value: number, wallet?: string): Promise<void>;
+  export function transferCommand(params: {
+    testnet: boolean;
+    toAddress: string;
+    value: number;
+    tokenAddress?: string;
+    name?: string;
+    walletsData?: any;
+    password?: string;
+    isExternal?: boolean;
+  }): Promise<{
+    success?: boolean;
+    data?: {
+      transactionHash: string;
+      from: string;
+      to: string;
+      amount: string;
+      token: string;
+      network: string;
+      explorerUrl: string;
+      gasUsed: string;
+      blockNumber: string;
+    };
+    error?: string;
+  } | undefined>;
 }
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/deploy.js' {

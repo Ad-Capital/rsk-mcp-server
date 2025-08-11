@@ -439,6 +439,37 @@ export function returnErrorMissingWalletPassword() {
   return `🔒 **Wallet Password**: Password is required when using walletData to decrypt your wallet.`;
 }
 
+export function returnTransferCompletedSuccessfully(network: string, data: any) {
+  const tokenInfo = data.token === "RBTC" ? "RBTC" : `${data.token} tokens`;
+  
+  return `✅ **Transfer Completed Successfully!**
+
+💸 **Transfer Details:**
+• **Amount**: ${data.amount} ${data.token}
+• **From**: ${data.from}
+• **To**: ${data.to}
+• **Network**: ${network}
+
+📦 **Transaction Details:**
+• **Transaction Hash**: \`${data.transactionHash}\`
+• **Block Number**: ${data.blockNumber}
+• **Gas Used**: ${data.gasUsed}
+
+🔗 **View on Explorer**: [${data.transactionHash}](${data.explorerUrl})
+
+✨ Your ${tokenInfo} ${data.token === "RBTC" ? "has" : "have"} been successfully transferred!`;
+}
+
+export function returnToTransfer(operation: string, missingInfo: string[]) {
+  return `🔄 **Transfer ${operation}**
+
+To complete the transfer, please provide the following information:
+
+${missingInfo.map(info => `${info}`).join('\n\n')}
+
+Once you provide all required information, the transfer will be processed.`;
+}
+
 export function returnMissingWalletNameNew() {
   return "📝 **Wallet Name**: Enter a name for your new wallet";
 }
@@ -664,7 +695,6 @@ ${args.map((info, index) => `${index + 1}. ${info}`).join("\n")}
 Please call the read-contract function again with these parameters filled in.`;
 }
 
-// Helper function to serialize BigInt values to strings
 function serializeBigInt(obj: any): any {
   if (obj === null || obj === undefined) return obj;
   
@@ -690,7 +720,6 @@ function serializeBigInt(obj: any): any {
 export function returnContractReadSuccessfully(content: string, data: any = null) {
   if (!data) return content;
 
-  // Convert BigInt values to strings before serialization
   const serializedResult = serializeBigInt(data.result);
 
   return `✅ **Contract Function Called Successfully**

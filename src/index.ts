@@ -1,12 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
-import { walletCommand } from "@rsksmart/rsk-cli/dist/src/commands/wallet.js";
 import { balanceCommand } from "@rsksmart/rsk-cli/dist/src/commands/balance.js";
 import { txCommand } from "@rsksmart/rsk-cli/dist/src/commands/tx.js";
-import { deployCommand } from "@rsksmart/rsk-cli/dist/src/commands/deploy.js";
-import { verifyCommand } from "@rsksmart/rsk-cli/dist/src/commands/verify.js";
-import { ReadContract } from "@rsksmart/rsk-cli/dist/src/commands/contract.js";
 import { createWalletOptions, generalInteractionOptions } from "./tools/constants.js";
 import {
   checkBalanceSchema,
@@ -14,50 +10,30 @@ import {
   createWalletSchema,
   deployContractSchema,
   readContractSchema,
+  transferTokenSchema,
   useWalletFromCreationSchema,
   verifyContractSchema,
 } from "./tools/schemas.js";
-import { extractPasswordFromFile } from "./tools/handlers.js";
 import { provideResponse } from "./handlers/responsesHandler.js";
 import { ResponseType } from "./tools/types.js";
+import { WalletService } from "./services/WalletService.js";
+import { ContractDeploymentService } from "./services/ContractDeploymentService.js";
+import { ContractVerificationService } from "./services/ContractVerificationService.js";
+import { ContractReadService } from "./services/ContractReadService.js";
+import { TransferService } from "./services/TransferService.js";
 import {
-  returnABIContentRequired,
-  returnBytecodeContentRequired,
   returnCheckBalanceSuccess,
-  returnContractAddressRequired,
   returnContractDeployedSuccessfully,
-  returnContractNameRequired,
   returnContractReadSuccessfully,
   returnContractVerifiedSuccessfully,
   returnCustomTokenAddress,
   returnErrorInvalidWalletData,
-  returnErrorMissingInfo,
-  returnErrorMissingWalletData,
-  returnErrorMissingWalletPassword,
-  returnErrorNoReadFunctions,
-  returnErrorTryAgain,
   returnErrorTxNotFound,
-  returnFunctionNameRequired,
-  returnJSONContentRequired,
-  returnMissingDeleteWalletName,
-  returnMissingNewMainWallet,
-  returnMissingNewWalletName,
-  returnMissingPreviousWallet,
-  returnMissingPrivateKey,
-  returnMissingReplaceCurrentWallet,
-  returnMissingWalletDataFile,
-  returnMissingWalletNameImport,
-  returnMissingWalletNameNew,
-  returnSecurePasswordMethod,
   returnToCheckBalance,
-  returnToDeployContract,
-  returnToReadContract,
-  returnToVerifyContract,
   returnTokenSelectionOptions,
   returnTransactionFound,
-  returnWalletConfigurationFile,
+  returnTransferCompletedSuccessfully,
   returnWalletCreatedSuccessfully,
-  returnWalletName,
 } from "./utils/responses.js";
 
 const server = new McpServer({
@@ -110,214 +86,43 @@ server.tool(
     newWalletName,
     deleteWalletName,
   }) => {
-    try {
-      let finalPassword = walletPassword;
-
-      if (passwordFile && !walletPassword) {
-        const passwordResult = extractPasswordFromFile(passwordFile);
-        if (passwordResult.error) {
-          return provideResponse(passwordResult.error, ResponseType.ErrorReadingPasswordFile);
-        }
-        finalPassword = passwordResult.password;
-      }
-
-      const missingInfo = [];
-
-      switch (walletOption) {
-        case "🆕 Create a new wallet":
-          if (!finalPassword) {
-            missingInfo.push(returnSecurePasswordMethod());
-          }
-          if (!walletName) {
-            missingInfo.push(returnMissingWalletNameNew());
-          }
-          if (replaceCurrentWallet === undefined) {
-            missingInfo.push(returnMissingReplaceCurrentWallet());
-          }
-          break;
-
-        case "🔑 Import existing wallet":
-          if (!privateKey) {
-            missingInfo.push(returnMissingPrivateKey());
-          }
-          if (!finalPassword) {
-            missingInfo.push(returnSecurePasswordMethod());
-          }
-          if (!walletName) {
-            missingInfo.push(returnMissingWalletNameImport());
-          }
-          if (replaceCurrentWallet === undefined) {
-            missingInfo.push(returnMissingReplaceCurrentWallet());
-          }
-          break;
-
-        case "🔍 List saved wallets":
-          if (!walletData) {
-            missingInfo.push(returnMissingWalletDataFile());
-          }
-          break;
-
-        case "🔁 Switch wallet":
-          if (!walletData) {
-            missingInfo.push(returnMissingWalletDataFile());
-          }
-          if (!newMainWallet) {
-            missingInfo.push(returnMissingNewMainWallet());
-          }
-          break;
-
-        case "📝 Update wallet name":
-          if (!walletData) {
-            missingInfo.push(returnMissingWalletDataFile());
-          }
-          if (!previousWallet) {
-            missingInfo.push(returnMissingPreviousWallet());
-          }
-          if (!newWalletName) {
-            missingInfo.push(returnMissingNewWalletName());
-          }
-          break;
-
-        case "❌ Delete wallet":
-          if (!walletData) {
-            missingInfo.push(returnMissingWalletDataFile());
-          }
-          if (!deleteWalletName) {
-            missingInfo.push(returnMissingDeleteWalletName());
-          }
-          break;
-        default:
-          return provideResponse(
-            `❌ **Invalid Option**\n\nThe option "${walletOption}" is not recognized. Please select a valid option.`,
-            ResponseType.ErrorTryAgain
-          );
-      }
-
-      if (missingInfo.length > 0) {
-        return provideResponse(returnErrorMissingInfo(walletOption, missingInfo), ResponseType.ErrorMissingInfo);
-      }
-
-      let processedWalletData = null;
-      if (walletData) {
-        if (typeof walletData === "string") {
-          try {
-            processedWalletData = JSON.parse(walletData);
-          } catch (error) {
-            console.error("Failed to parse walletData as JSON:", error);
-            return provideResponse(
-              returnErrorInvalidWalletData(
-                `Invalid JSON format: ${error instanceof Error ? error.message : String(error)}`
-              ),
-              ResponseType.ErrorInvalidWalletData
-            );
-          }
-        } else {
-          processedWalletData = walletData;
-        }
-
-        if (processedWalletData && (!processedWalletData.wallets || typeof processedWalletData.wallets !== 'object')) {
-          console.error("Invalid wallet data structure:", processedWalletData);
-          return provideResponse(
-            returnErrorInvalidWalletData("Invalid wallet data structure: missing 'wallets' object"),
-            ResponseType.ErrorInvalidWalletData
-          );
-        }
-
-        if (["🔁 Switch wallet", "📝 Update wallet name", "❌ Delete wallet"].includes(walletOption)) {
-          if (!processedWalletData || Object.keys(processedWalletData.wallets || {}).length === 0) {
-            return provideResponse(
-              returnErrorInvalidWalletData("No wallets found in wallet data. Please ensure you have existing wallets."),
-              ResponseType.ErrorInvalidWalletData
-            );
-          }
-        }
-      }
-
-      const commandParams: any = {
-        action: walletOption,
-        isExternal: true
-      };
-
-      switch (walletOption) {
-        case "🆕 Create a new wallet":
-          commandParams.password = finalPassword;
-          commandParams.newWalletName = walletName;
-          commandParams.replaceCurrentWallet = replaceCurrentWallet;
-          commandParams.walletsData = processedWalletData || { wallets: {}, currentWallet: "" };
-          break;
-
-        case "🔑 Import existing wallet":
-          commandParams.pk = privateKey;
-          commandParams.password = finalPassword;
-          commandParams.newWalletName = walletName;
-          commandParams.replaceCurrentWallet = replaceCurrentWallet;
-          commandParams.walletsData = processedWalletData || { wallets: {}, currentWallet: "" };
-          break;
-
-        case "🔍 List saved wallets":
-          commandParams.walletsData = processedWalletData;
-          break;
-
-        case "🔁 Switch wallet":
-          commandParams.walletsData = processedWalletData;
-          commandParams.newMainWallet = newMainWallet;
-          break;
-
-        case "📝 Update wallet name":
-          commandParams.walletsData = processedWalletData;
-          commandParams.previousWallet = previousWallet;
-          commandParams.newWalletName = newWalletName;
-          break;
-
-        case "❌ Delete wallet":
-          commandParams.walletsData = processedWalletData;
-          commandParams.deleteWalletName = deleteWalletName;
-          break;
-      }
-
-      let commandResult;
-      try {
-        console.log("Executing wallet command with params:", JSON.stringify(commandParams, null, 2));
-        commandResult = await walletCommand(commandParams);
-        console.log("Wallet command result:", commandResult?.success ? "SUCCESS" : "FAILED");
-      } catch (error) {
-        console.error("Error executing wallet command:", error);
-        return provideResponse(
-          returnErrorTryAgain(walletOption, [
-            `Command execution failed: ${error instanceof Error ? error.message : String(error)}`,
-          ]),
-          ResponseType.ErrorTryAgain
-        );
-      }
-      
-      if (commandResult?.success) {
-        const walletConfigJson = JSON.stringify(
-          commandResult.walletsData,
-          null,
-          2
-        );
-        return provideResponse(
-          returnWalletCreatedSuccessfully(walletOption, [
-            JSON.stringify(commandResult, null, 2),
-            walletConfigJson,
-          ]),
-          ResponseType.WalletCreatedSuccessfully
-        );
-      }
-
+    if (!createWalletOptions.includes(walletOption as any)) {
       return provideResponse(
-        returnErrorTryAgain(walletOption, [
-          commandResult?.error || "Unknown error occurred",
-        ]),
+        `❌ **Invalid Option**\n\nThe option "${walletOption}" is not recognized. Please select a valid option.`,
         ResponseType.ErrorTryAgain
       );
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
+    }
+
+    const walletService = new WalletService();
+
+    const result = await walletService.processWalletOperation({
+      walletOption,
+      walletPassword,
+      passwordFile,
+      walletData,
+      walletName,
+      replaceCurrentWallet,
+      privateKey,
+      newMainWallet,
+      previousWallet,
+      newWalletName,
+      deleteWalletName,
+    });
+
+    if (result.success) {
+      const responseType = result.responseType as keyof typeof ResponseType;
       return provideResponse(
-        returnErrorTryAgain(walletOption, [
-          errorMsg || "Unknown error occurred",
+        returnWalletCreatedSuccessfully(walletOption, [
+          result.data.result,
+          result.data.walletConfig,
         ]),
-        ResponseType.ErrorTryAgain
+        ResponseType[responseType] || ResponseType.WalletCreatedSuccessfully
+      );
+    } else {
+      const responseType = result.responseType as keyof typeof ResponseType;
+      return provideResponse(
+        result.error || "Unknown error occurred",
+        ResponseType[responseType] || ResponseType.ErrorTryAgain
       );
     }
   }
@@ -400,91 +205,41 @@ server.tool(
   useWalletFromCreationSchema.shape,
   async ({ testnet, token, customTokenAddress, walletCreationResult }) => {
     try {
-      let walletResult;
-      try {
-        walletResult = JSON.parse(walletCreationResult);
-      } catch (error) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ **Invalid wallet creation result format**
+      const walletService = new WalletService();
 
-Please provide the complete JSON result from when you created the wallet.
-
-Error: ${error instanceof Error ? error.message : String(error)}`,
-            },
-          ],
-        };
-      }
-
-      const walletData = walletResult.walletsData;
-      if (!walletData || !walletData.wallets || !walletData.currentWallet) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ **Invalid wallet data structure**
-
-The wallet creation result doesn't contain valid wallet data. Please ensure you're using the complete result from create-wallet.`,
-            },
-          ],
-        };
-      }
-
-      const result = await balanceCommand(
+      const result = await walletService.checkBalanceFromCreation({
         testnet,
-        undefined,
-        undefined,
-        true,
         token,
         customTokenAddress,
-        walletData
-      );
+        walletCreationResult,
+      });
 
-      if (result?.success && result.data) {
-        const { data } = result;
-
+      if (result.success) {
         return {
           content: [
             {
               type: "text",
-              text: `✅ **Balance Retrieved Successfully**
-
-💰 **Balance**: ${data.balance} ${data.symbol}
-📄 **Wallet Address**: ${data.walletAddress}
-🌐 **Network**: ${data.network}
-🔗 **Token Type**: ${data.tokenType}${
-                data.tokenName
-                  ? `
-📝 **Token Name**: ${data.tokenName}
-📄 **Contract**: ${data.tokenContract}
-🔢 **Decimals**: ${data.decimals}`
-                  : ""
-              }
-
-**Note**: Ensure that transactions are being conducted on the correct network.
-
-What would you like to do next?`,
+              text: walletService.formatBalanceFromCreationResponse(result.data),
+            },
+          ],
+        };
+      } else {
+        const isParsingError = result.error?.includes("Invalid wallet creation result format") || 
+                              result.error?.includes("Invalid wallet data structure");
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: walletService.formatErrorFromCreationResponse(result.error!, isParsingError),
             },
           ],
         };
       }
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: `❌ **Failed to check balance**
-
-Error: ${result?.error || "Unknown error occurred"}
-
-Please verify your wallet configuration and try again.`,
-          },
-        ],
-      };
     } catch (error) {
+      const walletService = new WalletService();
       const errorMsg = error instanceof Error ? error.message : String(error);
+      
       return {
         content: [
           {
@@ -557,207 +312,60 @@ server.tool(
   "Deploy a smart contract to the Rootstock blockchain using ABI and bytecode",
   deployContractSchema.shape,
   async ({ testnet, abiContent, bytecodeContent, constructorArgs, walletName, walletData, walletPassword }) => {
-    try {
-      const missingInfo = [];
+    const deploymentService = new ContractDeploymentService();
 
-      if (!abiContent) {
-        missingInfo.push(returnABIContentRequired());
-      }
+    const result = await deploymentService.processContractDeployment({
+      testnet,
+      abiContent,
+      bytecodeContent,
+      constructorArgs,
+      walletName,
+      walletData,
+      walletPassword,
+    });
 
-      if (!bytecodeContent) {
-        missingInfo.push(returnBytecodeContentRequired());
-      }
-
-      if (!walletData && !walletName) {
-        missingInfo.push(returnErrorMissingWalletData());
-      }
-
-      if (walletData && !walletPassword) {
-        missingInfo.push(returnErrorMissingWalletPassword());
-      }
-
-      if (missingInfo.length > 0) {
-        return provideResponse(
-          returnToDeployContract("", missingInfo),
-          ResponseType.ToDeployContract
-        );
-      }
-
-      let parsedABI;
-      try {
-        parsedABI = JSON.parse(abiContent);
-        if (!Array.isArray(parsedABI)) {
-          return provideResponse(
-            "ABI must be a JSON array",
-            ResponseType.ErrorInvalidABI
-          );
-        }
-      } catch (error) {
-        return provideResponse(
-          error instanceof Error ? error.message : String(error),
-          ResponseType.ErrorInvalidABI
-        );
-      }
-
-      let cleanBytecode = bytecodeContent.trim();
-      if (!cleanBytecode.startsWith("0x")) {
-        cleanBytecode = `0x${cleanBytecode}`;
-      }
-
-      const bytecodeRegex = /^0x[a-fA-F0-9]+$/;
-      if (!bytecodeRegex.test(cleanBytecode)) {
-        return provideResponse(
-          cleanBytecode,
-          ResponseType.ErrorInvalidBytecode
-        );
-      }
-
-      let processedWalletData = walletData;
-      if (typeof walletData === "string") {
-        try {
-          processedWalletData = JSON.parse(walletData);
-        } catch (error) {
-          return provideResponse(
-            error instanceof Error ? error.message : String(error),
-            ResponseType.ErrorInvalidWalletData
-          );
-        }
-      }
-
-      const result = await deployCommand(
-        JSON.stringify(parsedABI),
-        cleanBytecode,
-        testnet,
-        constructorArgs || [],
-        walletName,
-        true,
-        processedWalletData,
-        walletPassword
-      );
-
-      if (result?.success && result.data) {
-        const { data } = result;
-
-        return provideResponse(
-          returnContractDeployedSuccessfully("", data),
-          ResponseType.ContractDeployedSuccessfully
-        );
-      }
-
+    if (result.success) {
+      const responseType = result.responseType as keyof typeof ResponseType;
       return provideResponse(
-        result?.error || "Contract deployment failed with unknown error",
-        ResponseType.ErrorDeployingContract
+        returnContractDeployedSuccessfully("", result.data),
+        ResponseType[responseType] || ResponseType.ContractDeployedSuccessfully
       );
-    } catch (error) {
+    } else {
+      const responseType = result.responseType as keyof typeof ResponseType;
       return provideResponse(
-        error instanceof Error ? error.message : String(error),
-        ResponseType.ErrorDeployingContract
+        result.error || "Contract deployment failed with unknown error",
+        ResponseType[responseType] || ResponseType.ErrorDeployingContract
       );
     }
   }
 );
-
-function validateStandardJSON(jsonContent: string): { isValid: boolean; error?: string } {
-  try {
-    const requiredFields = ['solcLongVersion', 'input', 'solcVersion'];
-    
-    if (!jsonContent.trim().startsWith('{') || !jsonContent.trim().endsWith('}')) {
-      return {
-        isValid: false,
-        error: 'JSON must be a valid object'
-      };
-    }
-    
-    const missingFields = requiredFields.filter(field => {
-      const fieldPattern = new RegExp(`"${field}"\\s*:`, 'i');
-      return !fieldPattern.test(jsonContent);
-    });
-    
-    if (missingFields.length > 0) {
-      return {
-        isValid: false,
-        error: `Missing required fields: ${missingFields.join(', ')}`
-      };
-    }
-    
-    return { isValid: true };
-  } catch (error) {
-    return {
-      isValid: false,
-      error: error instanceof Error ? error.message : 'Invalid JSON format'
-    };
-  }
-}
 
 server.tool(
   "verify-contract",
   "Verify a smart contract on the Rootstock blockchain using source code and compilation metadata",
   verifyContractSchema.shape,
   async ({ testnet, contractAddress, contractName, jsonContent, constructorArgs }) => {
-    try {
-      const missingInfo = [];
+    const verificationService = new ContractVerificationService();
 
-      if (!contractAddress) {
-        missingInfo.push(returnContractAddressRequired());
-      }
+    const result = await verificationService.processContractVerification({
+      testnet,
+      contractAddress,
+      contractName,
+      jsonContent,
+      constructorArgs,
+    });
 
-      if (!contractName) {
-        missingInfo.push(returnContractNameRequired());
-      }
-
-      if (!jsonContent) {
-        missingInfo.push(returnJSONContentRequired());
-      }
-
-      if (missingInfo.length > 0) {
-        return provideResponse(
-          returnToVerifyContract("", missingInfo),
-          ResponseType.ToVerifyContract
-        );
-      }
-
-      const addressRegex = /^0x[a-fA-F0-9]{40}$/;
-      if (!addressRegex.test(contractAddress)) {
-        return provideResponse(
-          contractAddress,
-          ResponseType.ErrorInvalidContractAddress
-        );
-      }
-
-      const jsonValidation = validateStandardJSON(jsonContent);
-      if (!jsonValidation.isValid) {
-        return provideResponse(
-          jsonValidation.error || "Invalid JSON Standard Input format",
-          ResponseType.ErrorInvalidJSON
-        );
-      }
-
-      const result = await verifyCommand(
-        jsonContent,
-        contractAddress,
-        contractName,
-        testnet,
-        constructorArgs || [],
-        true
-      );
-
-      if (result?.success && result.data) {
-        const { data } = result;
-
-        return provideResponse(
-          returnContractVerifiedSuccessfully("", data),
-          ResponseType.ContractVerifiedSuccessfully
-        );
-      }
-
+    if (result.success) {
+      const responseType = result.responseType as keyof typeof ResponseType;
       return provideResponse(
-        result?.error || "Contract verification failed with unknown error",
-        ResponseType.ErrorVerifyingContract
+        returnContractVerifiedSuccessfully("", result.data),
+        ResponseType[responseType] || ResponseType.ContractVerifiedSuccessfully
       );
-    } catch (error) {
+    } else {
+      const responseType = result.responseType as keyof typeof ResponseType;
       return provideResponse(
-        error instanceof Error ? error.message : String(error),
-        ResponseType.ErrorVerifyingContract
+        result.error || "Contract verification failed with unknown error",
+        ResponseType[responseType] || ResponseType.ErrorVerifyingContract
       );
     }
   }
@@ -768,76 +376,61 @@ server.tool(
   "Read data from a verified smart contract on the Rootstock blockchain by calling view/pure functions",
   readContractSchema.shape,
   async ({ testnet, contractAddress, functionName, functionArgs }) => {
-    try {
-      const missingInfo = [];
+    const contractReadService = new ContractReadService();
 
-      if (!contractAddress) {
-        missingInfo.push(returnContractAddressRequired());
-      }
+    const result = await contractReadService.processContractRead({
+      testnet,
+      contractAddress,
+      functionName,
+      functionArgs,
+    });
 
-      if (missingInfo.length > 0) {
-        return provideResponse(
-          returnToReadContract("", missingInfo),
-          ResponseType.ToReadContract
-        );
-      }
-
-      const addressRegex = /^0x[a-fA-F0-9]{40}$/;
-      if (!addressRegex.test(contractAddress)) {
-        return provideResponse(
-          contractAddress,
-          ResponseType.ErrorInvalidContractAddress
-        );
-      }
-
-      const result = await ReadContract(
-        contractAddress,
-        testnet,
-        true,
-        functionName,
-        functionArgs
-      );
-
-      if (result?.success && result.data) {
-        const { data } = result;
-
-        return provideResponse(
-          returnContractReadSuccessfully("", data),
-          ResponseType.ContractReadSuccessfully
-        );
-      }
-
-      if (result?.error) {
-        if (result.error.includes("verification not found") || result.error.includes("not verified")) {
-          return provideResponse(
-            contractAddress,
-            ResponseType.ErrorContractNotVerified
-          );
-        }
-
-        if (result.error.includes("Function name is required")) {
-          return provideResponse(
-            returnFunctionNameRequired(),
-            ResponseType.ToReadContract
-          );
-        }
-
-        if (result.error.includes("No read functions found")) {
-          return provideResponse(
-            returnErrorNoReadFunctions(),
-            ResponseType.ErrorReadingContract
-          );
-        }
-      }
-
+    if (result.success) {
+      const responseType = result.responseType as keyof typeof ResponseType;
       return provideResponse(
-        result?.error || "Contract reading failed with unknown error",
-        ResponseType.ErrorReadingContract
+        returnContractReadSuccessfully("", result.data),
+        ResponseType[responseType] || ResponseType.ContractReadSuccessfully
       );
-    } catch (error) {
+    } else {
+      const responseType = result.responseType as keyof typeof ResponseType;
       return provideResponse(
-        error instanceof Error ? error.message : String(error),
-        ResponseType.ErrorReadingContract
+        result.error || "Contract reading failed with unknown error",
+        ResponseType[responseType] || ResponseType.ErrorReadingContract
+      );
+    }
+  }
+);
+
+server.tool(
+  "transfer-tokens",
+  "Transfer RBTC or ERC20 tokens on Rootstock blockchain between wallets",
+  transferTokenSchema.shape,
+  async ({ testnet, toAddress, value, tokenAddress, walletName, walletData, walletPassword }) => {
+    const transferService = new TransferService();
+
+    const result = await transferService.processTransfer({
+      testnet,
+      toAddress,
+      value,
+      tokenAddress,
+      walletName,
+      walletData,
+      walletPassword,
+    });
+
+    if (result.success) {
+      const networkName = result.data.network || (testnet ? "Rootstock Testnet" : "Rootstock Mainnet");
+      const responseType = result.responseType as keyof typeof ResponseType;
+      
+      return provideResponse(
+        returnTransferCompletedSuccessfully(networkName, result.data),
+        ResponseType[responseType] || ResponseType.TransferCompletedSuccessfully
+      );
+    } else {
+      const responseType = result.responseType as keyof typeof ResponseType;
+      return provideResponse(
+        result.error || "Transfer failed with unknown error",
+        ResponseType[responseType] || ResponseType.ErrorTransferFailed
       );
     }
   }

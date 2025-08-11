@@ -48,4 +48,9 @@ export enum ResponseType {
   ErrorReadingContract = "errorReadingContract",
   ErrorContractNotVerified = "errorContractNotVerified",
   AvailableFunctions = "availableFunctions",
+  TransferCompletedSuccessfully = "transferCompletedSuccessfully",
+  ToTransfer = "toTransfer",
+  ErrorInvalidTokenAddress = "errorInvalidTokenAddress",
+  ErrorInvalidAddress = "errorInvalidAddress",
+  ErrorTransferFailed = "errorTransferFailed",
 }
