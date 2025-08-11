@@ -18,9 +18,7 @@ export const createWalletOptions = [
   "🔍 List saved wallets",
   "🔁 Switch wallet",
   "📝 Update wallet name",
-  "📂 Backup wallet data",
   "❌ Delete wallet",
-  "📖 Address Book",
 ] as const;
 
 

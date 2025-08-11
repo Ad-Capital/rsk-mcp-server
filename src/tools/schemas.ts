@@ -6,36 +6,58 @@ export const createWalletSchema = z.object({
   walletOption: z
     .enum(createWalletOptions)
     .describe("The wallet creation option selected by the user"),
+  
+  // Common parameters
   walletPassword: z
     .string()
     .optional()
-    .describe(
-      "The password for the wallet - or upload a JSON file with password field"
-    ),
+    .describe("The password for the wallet - required for create/import operations"),
   passwordFile: z
     .string()
     .optional()
-    .describe(
-      'JSON file content with password field - format: {"password": "yourpassword"}'
-    ),
+    .describe('JSON file content with password field - format: {"password": "yourpassword"}'),
   walletData: z
     .custom<WalletData>()
     .optional()
-    .describe(
-      "Your previously saved wallet configuration file content (my-wallets.json) - required for importing existing wallets"
-    ),
+    .describe("Your previously saved wallet configuration file content (my-wallets.json) - required for most operations"),
+  
+  // For Create/Import new wallet
   walletName: z
     .string()
     .optional()
-    .describe(
-      "The name for the new wallet - will be requested if not provided"
-    ),
+    .describe("The name for the new wallet - required for create/import operations"),
   replaceCurrentWallet: z
     .boolean()
     .optional()
-    .describe(
-      "Whether to replace current wallet - will be requested if not provided"
-    ),
+    .describe("Whether to replace current wallet - for create/import operations"),
+    
+  // For Import existing wallet  
+  privateKey: z
+    .string()
+    .optional()
+    .describe("Private key to import - required for 'Import existing wallet' option"),
+    
+  // For Switch wallet
+  newMainWallet: z
+    .string()
+    .optional()
+    .describe("Name of wallet to switch to - required for 'Switch wallet' option"),
+    
+  // For Update wallet name
+  previousWallet: z
+    .string()
+    .optional()
+    .describe("Current name of wallet to rename - required for 'Update wallet name' option"),
+  newWalletName: z
+    .string()
+    .optional()
+    .describe("New name for the wallet - required for 'Update wallet name' option"),
+    
+  // For Delete wallet
+  deleteWalletName: z
+    .string()
+    .optional()
+    .describe("Name of wallet to delete - required for 'Delete wallet' option"),
 });
 
 export const checkBalanceSchema = z.object({

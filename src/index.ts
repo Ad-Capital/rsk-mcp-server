@@ -39,7 +39,15 @@ import {
   returnErrorTxNotFound,
   returnFunctionNameRequired,
   returnJSONContentRequired,
-  returnReplaceCurrentWallet,
+  returnMissingDeleteWalletName,
+  returnMissingNewMainWallet,
+  returnMissingNewWalletName,
+  returnMissingPreviousWallet,
+  returnMissingPrivateKey,
+  returnMissingReplaceCurrentWallet,
+  returnMissingWalletDataFile,
+  returnMissingWalletNameImport,
+  returnMissingWalletNameNew,
   returnSecurePasswordMethod,
   returnToCheckBalance,
   returnToDeployContract,
@@ -67,7 +75,7 @@ server.tool(
   {},
   async () => {
     const optionsText = generalInteractionOptions
-      .map((option, index) => `${index + 1}. ${option}`)
+      .map((option, index) => `${index + 1}. ${option} \n`)
       .join("\n");
     return provideResponse(optionsText, ResponseType.Interaction);
   }
@@ -96,6 +104,11 @@ server.tool(
     walletData,
     walletName,
     replaceCurrentWallet,
+    privateKey,
+    newMainWallet,
+    previousWallet,
+    newWalletName,
+    deleteWalletName,
   }) => {
     try {
       let finalPassword = walletPassword;
@@ -110,35 +123,173 @@ server.tool(
 
       const missingInfo = [];
 
-      if (!finalPassword) {
-        missingInfo.push(returnSecurePasswordMethod());
-      }
+      switch (walletOption) {
+        case "🆕 Create a new wallet":
+          if (!finalPassword) {
+            missingInfo.push(returnSecurePasswordMethod());
+          }
+          if (!walletName) {
+            missingInfo.push(returnMissingWalletNameNew());
+          }
+          if (replaceCurrentWallet === undefined) {
+            missingInfo.push(returnMissingReplaceCurrentWallet());
+          }
+          break;
 
-      if (!walletName) {
-        missingInfo.push(
-          returnWalletName()
-        );
-      }
+        case "🔑 Import existing wallet":
+          if (!privateKey) {
+            missingInfo.push(returnMissingPrivateKey());
+          }
+          if (!finalPassword) {
+            missingInfo.push(returnSecurePasswordMethod());
+          }
+          if (!walletName) {
+            missingInfo.push(returnMissingWalletNameImport());
+          }
+          if (replaceCurrentWallet === undefined) {
+            missingInfo.push(returnMissingReplaceCurrentWallet());
+          }
+          break;
 
-      if (replaceCurrentWallet === undefined) {
-        missingInfo.push(returnReplaceCurrentWallet());
-      }
+        case "🔍 List saved wallets":
+          if (!walletData) {
+            missingInfo.push(returnMissingWalletDataFile());
+          }
+          break;
 
-      if (walletOption === "🔑 Import existing wallet" && !walletData) {
-        missingInfo.push(returnWalletConfigurationFile());
+        case "🔁 Switch wallet":
+          if (!walletData) {
+            missingInfo.push(returnMissingWalletDataFile());
+          }
+          if (!newMainWallet) {
+            missingInfo.push(returnMissingNewMainWallet());
+          }
+          break;
+
+        case "📝 Update wallet name":
+          if (!walletData) {
+            missingInfo.push(returnMissingWalletDataFile());
+          }
+          if (!previousWallet) {
+            missingInfo.push(returnMissingPreviousWallet());
+          }
+          if (!newWalletName) {
+            missingInfo.push(returnMissingNewWalletName());
+          }
+          break;
+
+        case "❌ Delete wallet":
+          if (!walletData) {
+            missingInfo.push(returnMissingWalletDataFile());
+          }
+          if (!deleteWalletName) {
+            missingInfo.push(returnMissingDeleteWalletName());
+          }
+          break;
+        default:
+          return provideResponse(
+            `❌ **Invalid Option**\n\nThe option "${walletOption}" is not recognized. Please select a valid option.`,
+            ResponseType.ErrorTryAgain
+          );
       }
 
       if (missingInfo.length > 0) {
         return provideResponse(returnErrorMissingInfo(walletOption, missingInfo), ResponseType.ErrorMissingInfo);
       }
 
-      const commandResult = await walletCommand(
-        walletOption,
-        finalPassword,
-        walletData,
-        walletName,
-        replaceCurrentWallet
-      );
+      let processedWalletData = null;
+      if (walletData) {
+        if (typeof walletData === "string") {
+          try {
+            processedWalletData = JSON.parse(walletData);
+          } catch (error) {
+            console.error("Failed to parse walletData as JSON:", error);
+            return provideResponse(
+              returnErrorInvalidWalletData(
+                `Invalid JSON format: ${error instanceof Error ? error.message : String(error)}`
+              ),
+              ResponseType.ErrorInvalidWalletData
+            );
+          }
+        } else {
+          processedWalletData = walletData;
+        }
+
+        if (processedWalletData && (!processedWalletData.wallets || typeof processedWalletData.wallets !== 'object')) {
+          console.error("Invalid wallet data structure:", processedWalletData);
+          return provideResponse(
+            returnErrorInvalidWalletData("Invalid wallet data structure: missing 'wallets' object"),
+            ResponseType.ErrorInvalidWalletData
+          );
+        }
+
+        if (["🔁 Switch wallet", "📝 Update wallet name", "❌ Delete wallet"].includes(walletOption)) {
+          if (!processedWalletData || Object.keys(processedWalletData.wallets || {}).length === 0) {
+            return provideResponse(
+              returnErrorInvalidWalletData("No wallets found in wallet data. Please ensure you have existing wallets."),
+              ResponseType.ErrorInvalidWalletData
+            );
+          }
+        }
+      }
+
+      const commandParams: any = {
+        action: walletOption,
+        isExternal: true
+      };
+
+      switch (walletOption) {
+        case "🆕 Create a new wallet":
+          commandParams.password = finalPassword;
+          commandParams.newWalletName = walletName;
+          commandParams.replaceCurrentWallet = replaceCurrentWallet;
+          commandParams.walletsData = processedWalletData || { wallets: {}, currentWallet: "" };
+          break;
+
+        case "🔑 Import existing wallet":
+          commandParams.pk = privateKey;
+          commandParams.password = finalPassword;
+          commandParams.newWalletName = walletName;
+          commandParams.replaceCurrentWallet = replaceCurrentWallet;
+          commandParams.walletsData = processedWalletData || { wallets: {}, currentWallet: "" };
+          break;
+
+        case "🔍 List saved wallets":
+          commandParams.walletsData = processedWalletData;
+          break;
+
+        case "🔁 Switch wallet":
+          commandParams.walletsData = processedWalletData;
+          commandParams.newMainWallet = newMainWallet;
+          break;
+
+        case "📝 Update wallet name":
+          commandParams.walletsData = processedWalletData;
+          commandParams.previousWallet = previousWallet;
+          commandParams.newWalletName = newWalletName;
+          break;
+
+        case "❌ Delete wallet":
+          commandParams.walletsData = processedWalletData;
+          commandParams.deleteWalletName = deleteWalletName;
+          break;
+      }
+
+      let commandResult;
+      try {
+        console.log("Executing wallet command with params:", JSON.stringify(commandParams, null, 2));
+        commandResult = await walletCommand(commandParams);
+        console.log("Wallet command result:", commandResult?.success ? "SUCCESS" : "FAILED");
+      } catch (error) {
+        console.error("Error executing wallet command:", error);
+        return provideResponse(
+          returnErrorTryAgain(walletOption, [
+            `Command execution failed: ${error instanceof Error ? error.message : String(error)}`,
+          ]),
+          ResponseType.ErrorTryAgain
+        );
+      }
+      
       if (commandResult?.success) {
         const walletConfigJson = JSON.stringify(
           commandResult.walletsData,

@@ -1,11 +1,16 @@
 declare module '@rsksmart/rsk-cli/dist/src/commands/wallet.js' {
-  export function walletCommand(
-    _action?: string,
-    _password?: string,
-    _walletsData?: any,
-    _newWalletName?: string,
-    _replaceCurrentWallet?: boolean
-  ): Promise<{
+  export function walletCommand(params?: {
+    action?: string;
+    password?: string;
+    walletsData?: any;
+    newWalletName?: string;
+    replaceCurrentWallet?: boolean;
+    isExternal?: boolean;
+    pk?: string;
+    newMainWallet?: string;
+    deleteWalletName?: string;
+    previousWallet?: string;
+  }): Promise<{
     success?: boolean;
     message?: string;
     walletsData?: any;

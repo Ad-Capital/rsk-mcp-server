@@ -52,10 +52,6 @@ export function returnWalletName() {
   return "📝 **Wallet Name**: Please provide a name for your wallet (e.g., 'MyRootstockWallet')";
 }
 
-export function returnReplaceCurrentWallet() {
-  return "🔄 **Replace Current Wallet**: Do you want to set this as your main wallet? (true/false)";
-}
-
 export function returnWalletConfigurationFile() {
   return `📁 **Wallet Configuration File**: 
          
@@ -441,6 +437,42 @@ export function returnErrorMissingWalletData() {
 
 export function returnErrorMissingWalletPassword() {
   return `🔒 **Wallet Password**: Password is required when using walletData to decrypt your wallet.`;
+}
+
+export function returnMissingWalletNameNew() {
+  return "📝 **Wallet Name**: Enter a name for your new wallet";
+}
+
+export function returnMissingReplaceCurrentWallet() {
+  return "🔄 **Replace Current Wallet**: Whether to set this as the current wallet (true/false)";
+}
+
+export function returnMissingPrivateKey() {
+  return "🔑 **Private Key**: Enter the private key of the wallet to import (with or without 0x prefix)";
+}
+
+export function returnMissingWalletNameImport() {
+  return "📝 **Wallet Name**: Enter a name for the imported wallet";
+}
+
+export function returnMissingWalletDataFile() {
+  return "📁 **Wallet Data**: Upload your wallet configuration file (my-wallets.json)";
+}
+
+export function returnMissingNewMainWallet() {
+  return "🔄 **New Main Wallet**: Enter the name of the wallet you want to switch to";
+}
+
+export function returnMissingPreviousWallet() {
+  return "📝 **Previous Wallet**: Enter the current name of the wallet to rename";
+}
+
+export function returnMissingNewWalletName() {
+  return "📝 **New Wallet Name**: Enter the new name for the wallet";
+}
+
+export function returnMissingDeleteWalletName() {
+  return "🗑️ **Delete Wallet Name**: Enter the name of the wallet to delete";
 }
 
 export function returnContractAddressRequired() {

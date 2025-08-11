@@ -1,8 +1,8 @@
-# DevX MCP Server - Rootstock Blockchain Tools
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/rsksmart/rsk-mcp-server/badge)](https://scorecard.dev/viewer/?uri=github.com/rsksmart/rsk-mcp-server)
+[![CodeQL](https://github.com/rsksmart/rskj/workflows/CodeQL/badge.svg)](https://github.com/rsksmart/rsk-mcp-server/actions?query=workflow%3ACodeQL)
+<img src="rootstock-logo.png" alt="RSK Logo" style="width:100%; height: auto;" />
 
-[![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)](package.json)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![MCP](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-orange.svg)](https://github.com/modelcontextprotocol)
+# DevX MCP Server - Rootstock Blockchain Tools
 
 **Rootstock MCP Server** is a Model Context Protocol (MCP) server that provides advanced tools for interacting with the Rootstock (RSK) blockchain. This project enables AI clients to seamlessly connect and execute blockchain operations.
 
@@ -338,10 +338,6 @@ DevXMcp/
 - Each wallet has its own unique IV (initialization vector)
 - Passwords are never stored in plain text
 
-### Configuration Files
-- `my-wallets.json`: Contains encrypted wallets
-- `password.json`: Optional file for automation (use with caution)
-
 ### Best Practices
 - Use strong and unique passwords
 - Maintain secure backups of `my-wallets.json`
@@ -356,11 +352,6 @@ npm install
 npm run build
 ```
 
-### Error: "Permission denied"
-```bash
-chmod +x build/index.js
-```
-
 ### MCP Connection Error
 - Verify absolute path in configuration
 - Ensure the project is compiled
@@ -368,74 +359,24 @@ chmod +x build/index.js
 
 ### Wallet Issues
 - Verify `my-wallets.json` format
-- Check password in `password.json`
+- Check password in `password.json` (In case you managed the password in a file)
 - Ensure sufficient funds for transactions
 
-## 📚 Usage Examples
+## Contributing
 
-### Complete User Flow
+We welcome contributions from the community. Please fork the repository and submit pull requests with your changes. Ensure your code adheres to the project's main objective.
 
-1. **Start Interaction:**
-   ```typescript
-   // AI client executes:
-   start-interaction()
-   ```
+## Support
 
-2. **Create Wallet:**
-   ```typescript
-   create-wallet({
-     walletOption: "🆕 Create a new wallet",
-     walletName: "MyFirstWallet",
-     walletPassword: "super_secure_password"
-   })
-   ```
+For any questions or support, please open an issue on the repository or reach out to the maintainers.
 
-3. **Check Balance:**
-   ```typescript
-   check-balance({
-     testnet: true,
-     token: "rBTC"
-   })
-   ```
 
-4. **Deploy Contract:**
-   ```typescript
-   deploy-contract({
-     testnet: true,
-     abiContent: "[...]",
-     bytecodeContent: "0x...",
-     walletPassword: "super_secure_password"
-   })
-   ```
-
-## 🤝 Contributing
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
-
-## 🆘 Support
-
-For support and questions:
-- Create an Issue on GitHub
-- Contact the Rootstock DevX team
-
-## 🔗 Useful Links
-
-- [Rootstock Documentation](https://rootstock.io/developers/)
-- [RSK CLI](https://github.com/rsksmart/rsk-cli)
-- [Model Context Protocol](https://github.com/modelcontextprotocol)
-- [Claude Desktop](https://claude.ai/desktop)
-- [Cursor IDE](https://cursor.sh/)
-
----
-
-**Developed by:** Sebastian G  
-**Team:** Rootstock DevX  
-**Version:** 0.0.1
+# Disclaimer
+The software provided in this GitHub repository is offered “as is,” without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement.
+- **Testing:** The software has not undergone testing of any kind, and its functionality, accuracy, reliability, and suitability for any purpose are not guaranteed.
+- **Use at Your Own Risk:** The user assumes all risks associated with the use of this software. The author(s) of this software shall not be held liable for any damages, including but not limited to direct, indirect, incidental, special, consequential, or punitive damages arising out of the use of or inability to use this software, even if advised of the possibility of such damages.
+- **No Liability:** The author(s) of this software are not liable for any loss or damage, including without limitation, any loss of profits, business interruption, loss of information or data, or other pecuniary loss arising out of the use of or inability to use this software.
+- **Sole Responsibility:** The user acknowledges that they are solely responsible for the outcome of the use of this software, including any decisions made or actions taken based on the software’s output or functionality.
+- **No Endorsement:** Mention of any specific product, service, or organization does not constitute or imply endorsement by the author(s) of this software.
+- **Modification and Distribution:** This software may be modified and distributed under the terms of the license provided with the software. By modifying or distributing this software, you agree to be bound by the terms of the license.
+- **Assumption of Risk:** By using this software, the user acknowledges and agrees that they have read, understood, and accepted the terms of this disclaimer and assumes all risks associated with the use of this software.
