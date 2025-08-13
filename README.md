@@ -25,6 +25,13 @@
 - **npm** or **yarn**
 - **TypeScript** (included in dev dependencies)
 
+> **Note:** You will use this Model Context Protocol Server from a LLM Client (e.g Cursor, Claude, Warp, etc) which needs to be compatible with the MCP standard. Take into account there are 2 steps here:
+> 1. Installation and Build
+> 2. AI Client Configuration
+
+IMPORTANT: You need to complete both settings to correctly use MCP within the Client.
+
+
 ## 🛠️ Installation and Build
 
 ### 1. Clone the Repository
@@ -56,25 +63,52 @@ This command:
 node build/index.js
 ```
 
+> **Important Note:** For local running this MCP, your client will point to the `index.js` file created on the `build` folder after building it.
+
 ## ⚙️ AI Client Configuration
 
 ### 🏠 Local Configuration
+
+### For Cursor IDE
+
+In Cursor, go to Settings > Cursor Settings > Tools & Integrations 
+
+You will see an option to `Add Custom MCP`
+<img src="./doc/img/cursorSettings.png" alt="MCP View" style="width:100%; height: auto;" />
+
+And add to the JSON file:
+```json
+{
+  "mcpServers": {
+    "rsk-mcp": {
+      "command": "node",
+      "args": ["/absolute/path/to/your/project/rsk-mcp-server/build/index.js"]
+    }
+  }
+}
+// The Args field contains the path to the index.js file created by the build.
+```
+> **Note:** For install reference on Cursor, please follow these instructions [Here](https://docs.cursor.com/en/context/mcp)
+
+Once it is installed into Cursor, you should see something like:
+<img src="./doc/img/cursorInstalled.png" alt="MCP View" style="width:100%; height: auto;" />
+
+Green dot indicates it was installed correctly.
 
 ### For Claude Desktop (Anthropic)
 
 Edit your Claude Desktop configuration file:
 
-**macOS/Linux:**
-```bash
-~/.config/claude-desktop/claude_desktop_config.json
-```
+Open your Claude client, and then click on Settings/Developer 
 
-**Windows:**
-```bash
-%APPDATA%\Claude\claude_desktop_config.json
-```
+<img src="./doc/img/claudeSettings.png" alt="Claude settings" style="width:100%; height: auto;" />
 
-Add the following configuration:
+Click the “Edit Config” button to open the configuration file and add the following configuration:
+
+> **Note:**  This action creates a new configuration file if one doesn’t exist, or opens your existing configuration. The file is located at:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
@@ -86,27 +120,15 @@ Add the following configuration:
     }
   }
 }
+// The Args field contains the path to the index.js file created by the build.
 ```
 > **Note:** For install reference on Claude, please follow these instructions [Here](https://modelcontextprotocol.io/quickstart/user)
 
+Once you have installed this MCP on the Claude client, you will see it once you click on the `Search and tools`option under Web search option (see next image)
 
-### For Cursor IDE
+<img src="./doc/img/claudeApp.png" alt="MCP View" style="width:100%; height: auto;" />
 
-In Cursor, go to Settings > Extensions > MCP and add:
-
-```json
-{
-  "mcpServers": {
-    "rsk-mcp": {
-      "command": "node",
-      "args": ["/absolute/path/to/your/project/rsk-mcp-server/build/index.js"]
-    }
-  }
-}
-```
-> **Note:** For install reference on Cursor, please follow these instructions [Here](https://docs.cursor.com/en/context/mcp)
-
-#### For Other MCP Implementations
+### For Other MCP Implementations
 
 Any MCP-compatible client can connect using:
 
@@ -133,6 +155,31 @@ node /path/to/project/DevXMcp/build/index.js
 }
 ```
 ## 🔧 Detailed Functionality
+
+Once this MCP is installed on the client, you will be able to interact with it by prompt, using chat box, for example, a good prompt to start interacting with this MCP is to write a prompt like:
+`I would like to start interacting with Rootstock`
+
+Then it will require you to give permission to use the MCP tool, you click on accept, and then it should answer something like:
+
+```
+Perfect! The Rootstock CLI is now active and ready to help you interact with the Rootstock blockchain. Here are the available options:
+Available Rootstock Operations:
+💼 wallet - Manage your wallet (create new, use existing, or import)
+💰 balance - Check wallet balances
+💸 transfer - Transfer RBTC or ERC20 tokens
+🔍 tx - Check transaction status
+🚀 deploy - Deploy a smart contract
+✅ verify - Verify a contract
+📄 contract - Interact with a contract
+🌉 bridge - Interact with RSK bridge
+📊 history - Check transaction history
+📦 batch-transfer - Execute batch transactions
+❓ help - Display help
+What would you like to do? If you don't have a wallet yet, I'd recommend starting with option 1 (wallet management) to create or import a wallet first. Then you can proceed with other operations like checking balances, transferring tokens, or deploying contracts.
+Which option interests you?
+```
+
+You can continue the flow according to what you need to do.
 
 ### 1. 💼 Wallet Management
 
@@ -359,7 +406,7 @@ npm run build
 
 ### Wallet Issues
 - Verify `my-wallets.json` format
-- Check password in `password.json` (In case you managed the password in a file)
+- Check password in `password.json` (in case you managed the password in a file)
 - Ensure sufficient funds for transactions
 
 ## Contributing
