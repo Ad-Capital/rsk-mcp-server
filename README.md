@@ -15,9 +15,7 @@
 - 🚀 **Contract Deployment**: Deploy smart contracts on Rootstock
 - ✅ **Contract Verification**: Verify deployed contracts
 - 📄 **Contract Interaction**: Read data from verified contracts
-- 🌉 **RSK Bridge**: Interact with the Rootstock bridge
 - 📊 **History**: Query transaction history
-- 📦 **Batch Transfers**: Execute multiple transfers
 
 ## 📋 Prerequisites
 
@@ -171,9 +169,7 @@ Available Rootstock Operations:
 🚀 deploy - Deploy a smart contract
 ✅ verify - Verify a contract
 📄 contract - Interact with a contract
-🌉 bridge - Interact with RSK bridge
 📊 history - Check transaction history
-📦 batch-transfer - Execute batch transactions
 ❓ help - Display help
 What would you like to do? If you don't have a wallet yet, I'd recommend starting with option 1 (wallet management) to create or import a wallet first. Then you can proceed with other operations like checking balances, transferring tokens, or deploying contracts.
 Which option interests you?

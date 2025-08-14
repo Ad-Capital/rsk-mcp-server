@@ -823,3 +823,54 @@ Which function would you like to call?`;
 export function returnErrorNoReadFunctions() {
   return "This contract has no view/pure functions available for reading.";
 }
+
+export function returnHistoryRetrievedSuccessfully(data: any) {
+  const { walletAddress, network, transfers, totalTransfers } = data;
+  
+  if (!transfers || transfers.length === 0) {
+    return `📜 **Transaction History**
+
+🔍 **Wallet**: ${walletAddress}
+🌐 **Network**: ${network}
+
+📭 **No transactions found**
+
+This wallet has no transaction history on ${network}.`;
+  }
+
+  const transactionList = transfers.slice(0, 10).map((transfer: any, index: number) => {
+    const date = transfer.metadata?.blockTimestamp ? new Date(transfer.metadata.blockTimestamp).toLocaleString() : 'Unknown date';
+    const asset = transfer.asset || 'RBTC';
+    const value = transfer.value || 'Unknown';
+    
+    return `**${index + 1}.** ${asset} Transfer
+   • **From**: ${transfer.from}
+   • **To**: ${transfer.to}
+   • **Amount**: ${value} ${asset}
+   • **Hash**: \`${transfer.hash}\`
+   • **Date**: ${date}`;
+  }).join('\n\n');
+
+  const showingCount = Math.min(transfers.length, 10);
+  const moreText = totalTransfers > showingCount ? `\n\n📋 **Showing ${showingCount} of ${totalTransfers} total transactions**` : '';
+
+  return `📜 **Transaction History**
+
+🔍 **Wallet**: ${walletAddress}
+🌐 **Network**: ${network}
+📊 **Total Transactions**: ${totalTransfers}
+
+${transactionList}${moreText}
+
+💡 **Tip**: Use the 'number' parameter to retrieve a specific number of recent transactions.`;
+}
+
+export function returnToHistory(operation: string, missingInfo: string[]) {
+  return `📜 **Transaction History ${operation}**
+
+To retrieve transaction history, please provide the following information:
+
+${missingInfo.map(info => `${info}`).join('\n\n')}
+
+Once you provide all required information, the history will be retrieved.`;
+}

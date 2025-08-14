@@ -101,14 +101,14 @@ export class ContractVerificationService {
    */
   public async executeVerification(params: ContractVerificationParams): Promise<ContractVerificationResult> {
     try {
-      const result = await verifyCommand(
-        params.jsonContent,
-        params.contractAddress,
-        params.contractName,
-        params.testnet,
-        params.constructorArgs || [],
-        true
-      );
+      const result = await verifyCommand({
+        jsonPath: params.jsonContent,
+        address: params.contractAddress,
+        name: params.contractName,
+        testnet: params.testnet,
+        args: params.constructorArgs || [],
+        isExternal: true
+      });
 
       if (result?.success && result.data) {
         return {

@@ -215,3 +215,19 @@ export const transferTokenSchema = z.object({
     .optional()
     .describe("Password to decrypt the wallet - required when using walletData"),
 });
+
+export const historySchema = z.object({
+  testnet: z.boolean().describe("Use testnet (true) or mainnet (false)"),
+  apiKey: z
+    .string()
+    .optional()
+    .describe("Alchemy API key - if not provided, will use stored key"),
+  number: z
+    .string()
+    .optional()
+    .describe("Number of recent transactions to retrieve"),
+  walletData: z
+    .custom<WalletData>()
+    .optional()
+    .describe("Your previously saved wallet configuration file content (my-wallets.json)"),
+});

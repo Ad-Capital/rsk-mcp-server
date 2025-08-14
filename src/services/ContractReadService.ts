@@ -111,13 +111,13 @@ export class ContractReadService {
    */
   public async executeContractRead(params: ContractReadParams): Promise<ContractReadResult> {
     try {
-      const result = await ReadContract(
-        params.contractAddress,
-        params.testnet,
-        true,
-        params.functionName,
-        params.functionArgs
-      );
+      const result = await ReadContract({
+        address: params.contractAddress,
+        testnet: params.testnet,
+        isExternal: true,
+        functionName: params.functionName,
+        args: params.functionArgs
+      });
 
       if (result?.success && result.data) {
         return {

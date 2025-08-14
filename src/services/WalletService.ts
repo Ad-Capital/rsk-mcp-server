@@ -202,12 +202,7 @@ export class WalletService {
    */
   public async executeWalletCommand(commandParams: any): Promise<WalletServiceResult> {
     try {
-      console.log("Executing wallet command with params:", JSON.stringify(commandParams, null, 2));
-      
       const commandResult = await walletCommand(commandParams);
-      
-      console.log("Wallet command result:", commandResult?.success ? "SUCCESS" : "FAILED");
-
       if (commandResult?.success) {
         const walletConfigJson = JSON.stringify(commandResult.walletsData, null, 2);
         
@@ -229,7 +224,6 @@ export class WalletService {
       };
 
     } catch (error) {
-      console.error("Error executing wallet command:", error);
       return {
         success: false,
         error: `Command execution failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -403,15 +397,15 @@ export class WalletService {
         };
       }
 
-      const result = await balanceCommand(
-        params.testnet,
-        undefined,
-        undefined,
-        true,
-        params.token,
-        params.customTokenAddress,
-        parseResult.walletData
-      );
+      const result = await balanceCommand({
+        testnet: params.testnet,
+        walletName: undefined,
+        holderAddress: undefined,
+        isExternal: true,
+        token: params.token,
+        customTokenAddress: params.customTokenAddress,
+        walletsData: parseResult.walletData
+      });
 
       if (result?.success && result.data) {
         return {

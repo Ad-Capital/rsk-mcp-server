@@ -6,9 +6,7 @@ export const generalInteractionOptions = [
   "🚀 deploy - Deploy a contract",
   "✅ verify - Verify a contract", 
   "📄 contract - Interact with a contract",
-  "🌉 bridge - Interact with RSK bridge",
   "📊 history - Fetch history for current wallet",
-  "📦 batch-transfer - Execute batch transactions interactively or from stdin",
   "❓ help - Display help for command"
 ] as const;
 

@@ -20,15 +20,15 @@ declare module '@rsksmart/rsk-cli/dist/src/commands/wallet.js' {
 }
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/balance.js' {
-  export function balanceCommand(
-    testnet: boolean,
-    walletName?: string,
-    holderAddress?: string,
-    _isExternal?: boolean,
-    _token?: string,
-    _customTokenAddress?: string,
-    _walletsData?: any
-  ): Promise<{
+  export function balanceCommand(params: {
+    testnet: boolean;
+    walletName?: string;
+    holderAddress?: string;
+    isExternal?: boolean;
+    token?: string;
+    customTokenAddress?: string;
+    walletsData?: any;
+  }): Promise<{
     success?: boolean;
     data?: {
       walletAddress: string;
@@ -46,11 +46,11 @@ declare module '@rsksmart/rsk-cli/dist/src/commands/balance.js' {
 }
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/tx.js' {
-  export function txCommand(
-    testnet: boolean,
-    txid: string,
-    _isExternal?: boolean
-  ): Promise<{
+  export function txCommand(params: {
+    testnet: boolean;
+    txid: string;
+    isExternal?: boolean;
+  }): Promise<{
     success?: boolean;
     data?: {
       txId: string;
@@ -94,16 +94,16 @@ declare module '@rsksmart/rsk-cli/dist/src/commands/transfer.js' {
 }
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/deploy.js' {
-  export function deployCommand(
-    abiPath: string,
-    bytecodePath: string,
-    testnet: boolean,
-    args?: any[],
-    name?: string,
-    _isExternal?: boolean,
-    _walletsData?: any,
-    _password?: string
-  ): Promise<{
+  export function deployCommand(params: {
+    abiPath: string;
+    bytecodePath: string;
+    testnet: boolean;
+    args?: any[];
+    name?: string;
+    isExternal?: boolean;
+    walletsData?: any;
+    password?: string;
+  }): Promise<{
     success?: boolean;
     data?: {
       contractAddress: string;
@@ -115,31 +115,49 @@ declare module '@rsksmart/rsk-cli/dist/src/commands/deploy.js' {
   } | undefined>;
 }
 
-declare module '@rsksmart/rsk-cli/dist/src/commands/bridge.js' {
-  export function bridgeCommand(testnet: boolean, wallet?: string): Promise<void>;
-}
-
 declare module '@rsksmart/rsk-cli/dist/src/commands/history.js' {
-  export function historyCommand(testnet: boolean, apiKey?: string, number?: string): Promise<void>;
+  export function historyCommand(params: {
+    testnet: boolean;
+    apiKey?: string;
+    number?: string;
+    walletsData?: any;
+    isExternal?: boolean;
+  }): Promise<{
+    success?: boolean;
+    data?: {
+      walletAddress: string;
+      network: string;
+      transfers: Array<{
+        from: string;
+        to: string;
+        asset?: string;
+        value?: string;
+        hash: string;
+        metadata?: {
+          blockTimestamp: string;
+        };
+      }>;
+      totalTransfers: number;
+    };
+    error?: string;
+  } | undefined>;
 }
 
-declare module '@rsksmart/rsk-cli/dist/src/commands/contract.js' {
-  export function ReadContract(address: string, testnet: boolean): Promise<void>;
-}
+
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/selectAddress.js' {
   export function selectAddress(): Promise<string>;
 } 
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/verify.js' {
-  export function verifyCommand(
-    jsonPath: string,
-    address: string,
-    name: string,
-    testnet: boolean,
-    args?: any[],
-    _isExternal?: boolean
-  ): Promise<{
+  export function verifyCommand(params: {
+    jsonPath: string;
+    address: string;
+    name: string;
+    testnet: boolean;
+    args?: any[];
+    isExternal?: boolean;
+  }): Promise<{
     success?: boolean;
     data?: {
       contractAddress: string;
@@ -155,13 +173,13 @@ declare module '@rsksmart/rsk-cli/dist/src/commands/verify.js' {
 }
 
 declare module '@rsksmart/rsk-cli/dist/src/commands/contract.js' {
-  export function ReadContract(
-    uppercaseAddress: string,
-    testnet: boolean,
-    _isExternal?: boolean,
-    _functionName?: string,
-    _args?: any[]
-  ): Promise<{
+  export function ReadContract(params: {
+    address: string;
+    testnet: boolean;
+    isExternal?: boolean;
+    functionName?: string;
+    args?: any[];
+  }): Promise<{
     success?: boolean;
     data?: {
       contractAddress: string;

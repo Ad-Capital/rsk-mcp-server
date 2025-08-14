@@ -53,4 +53,7 @@ export enum ResponseType {
   ErrorInvalidTokenAddress = "errorInvalidTokenAddress",
   ErrorInvalidAddress = "errorInvalidAddress",
   ErrorTransferFailed = "errorTransferFailed",
+  HistoryRetrievedSuccessfully = "historyRetrievedSuccessfully",
+  ToHistory = "toHistory",
+  ErrorRetrievingHistory = "errorRetrievingHistory",
 }

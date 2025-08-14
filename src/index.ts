@@ -9,6 +9,7 @@ import {
   checkTransactionSchema,
   createWalletSchema,
   deployContractSchema,
+  historySchema,
   readContractSchema,
   transferTokenSchema,
   useWalletFromCreationSchema,
@@ -21,6 +22,7 @@ import { ContractDeploymentService } from "./services/ContractDeploymentService.
 import { ContractVerificationService } from "./services/ContractVerificationService.js";
 import { ContractReadService } from "./services/ContractReadService.js";
 import { TransferService } from "./services/TransferService.js";
+import { HistoryService } from "./services/HistoryService.js";
 import {
   returnCheckBalanceSuccess,
   returnContractDeployedSuccessfully,
@@ -29,6 +31,7 @@ import {
   returnCustomTokenAddress,
   returnErrorInvalidWalletData,
   returnErrorTxNotFound,
+  returnHistoryRetrievedSuccessfully,
   returnToCheckBalance,
   returnTokenSelectionOptions,
   returnTransactionFound,
@@ -165,15 +168,15 @@ server.tool(
         }
       }
 
-      const result = await balanceCommand(
+      const result = await balanceCommand({
         testnet,
         walletName,
-        undefined,
-        true,
+        holderAddress: undefined,
+        isExternal: true,
         token,
         customTokenAddress,
-        processedWalletData
-      );
+        walletsData: processedWalletData
+      });
 
       if (result?.success && result.data) {
         const { data } = result;
@@ -279,7 +282,11 @@ server.tool(
         );
       }
 
-      const result = await txCommand(testnet, cleanTxid, true);
+      const result = await txCommand({
+        testnet,
+        txid: cleanTxid,
+        isExternal: true
+      });
 
       if (result?.success && result.data) {
         const { data } = result;
@@ -431,6 +438,36 @@ server.tool(
       return provideResponse(
         result.error || "Transfer failed with unknown error",
         ResponseType[responseType] || ResponseType.ErrorTransferFailed
+      );
+    }
+  }
+);
+
+server.tool(
+  "check-transaction-history",
+  "Check the transaction history of a wallet on Rootstock blockchain using Alchemy API",
+  historySchema.shape,
+  async ({ testnet, apiKey, number, walletData }) => {
+    const historyService = new HistoryService();
+
+    const result = await historyService.processHistory({
+      testnet,
+      apiKey,
+      number,
+      walletData,
+    });
+
+    if (result.success) {
+      const responseType = result.responseType as keyof typeof ResponseType;
+      return provideResponse(
+        returnHistoryRetrievedSuccessfully(result.data),
+        ResponseType[responseType] || ResponseType.HistoryRetrievedSuccessfully
+      );
+    } else {
+      const responseType = result.responseType as keyof typeof ResponseType;
+      return provideResponse(
+        result.error || "Failed to retrieve transaction history",
+        ResponseType[responseType] || ResponseType.ErrorRetrievingHistory
       );
     }
   }

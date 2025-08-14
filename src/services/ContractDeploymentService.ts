@@ -118,16 +118,16 @@ export class ContractDeploymentService {
     processedWalletData?: WalletData
   ): Promise<ContractDeploymentResult> {
     try {
-      const result = await deployCommand(
-        JSON.stringify(abi),
-        bytecode,
-        params.testnet,
-        params.constructorArgs || [],
-        params.walletName,
-        true,
-        processedWalletData,
-        params.walletPassword
-      );
+      const result = await deployCommand({
+        abiPath: JSON.stringify(abi),
+        bytecodePath: bytecode,
+        testnet: params.testnet,
+        args: params.constructorArgs || [],
+        name: params.walletName,
+        isExternal: true,
+        walletsData: processedWalletData,
+        password: params.walletPassword
+      });
 
       if (result?.success && result.data) {
         return {
