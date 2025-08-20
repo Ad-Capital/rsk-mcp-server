@@ -65,6 +65,72 @@ node build/index.js
 
 ## ⚙️ AI Client Configuration
 
+### 🏠 Remote Configuration
+
+### For Cursor IDE
+
+In Cursor, go to Settings > Cursor Settings > Tools & Integrations 
+
+You will see an option to `Add Custom MCP`
+<img src="./doc/img/cursorSettings.png" alt="MCP View" style="width:100%; height: auto;" />
+
+And add to the JSON file:
+```json
+{
+  "mcpServers": {
+    "rsk-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "rsk-mcp-server"
+      ]
+    }
+  }
+}
+// The Args field contains the path to the index.js file created by the build.
+```
+> **Note:** For install reference on Cursor, please follow these instructions [Here](https://docs.cursor.com/en/context/mcp)
+
+Once it is installed into Cursor, you should see something like:
+<img src="./doc/img/cursorInstalled.png" alt="MCP View" style="width:100%; height: auto;" />
+
+Green dot indicates it was installed correctly.
+
+### For Claude Desktop (Anthropic)
+
+Edit your Claude Desktop configuration file:
+
+Open your Claude client, and then click on Settings/Developer 
+
+<img src="./doc/img/claudeSettings.png" alt="Claude settings" style="width:100%; height: auto;" />
+
+Click the “Edit Config” button to open the configuration file and add the following configuration:
+
+> **Note:**  This action creates a new configuration file if one doesn’t exist, or opens your existing configuration. The file is located at:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "rsk-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "rsk-mcp-server"
+      ]
+    }
+  }
+}
+// The Args field contains the path to the index.js file created by the build.
+```
+> **Note:** For install reference on Claude, please follow these instructions [Here](https://modelcontextprotocol.io/quickstart/user)
+
+Once you have installed this MCP on the Claude client, you will see it once you click on the `Search and tools`option under Web search option (see next image)
+
+<img src="./doc/img/claudeApp.png" alt="MCP View" style="width:100%; height: auto;" />
+
 ### 🏠 Local Configuration
 
 ### For Cursor IDE
