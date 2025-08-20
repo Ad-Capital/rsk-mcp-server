@@ -40,7 +40,7 @@ import {
 export function createMcpServer(): McpServer {
   const server = new McpServer({
     name: "rsk-mcp-server",
-    version: "0.1.0",
+    version: "0.1.1",
     capabilities: {
       resources: {},
       tools: {},
