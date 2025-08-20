@@ -2,7 +2,7 @@
 [![CodeQL](https://github.com/rsksmart/rskj/workflows/CodeQL/badge.svg)](https://github.com/rsksmart/rsk-mcp-server/actions?query=workflow%3ACodeQL)
 <img src="rootstock-logo.png" alt="RSK Logo" style="width:100%; height: auto;" />
 
-# DevX MCP Server - Rootstock Blockchain Tools
+# RSK MCP Server - Rootstock Blockchain Tools
 
 **Rootstock MCP Server** is a Model Context Protocol (MCP) server that provides advanced tools for interacting with the Rootstock (RSK) blockchain. This project enables AI clients to seamlessly connect and execute blockchain operations.
 
@@ -131,7 +131,7 @@ Once you have installed this MCP on the Claude client, you will see it once you 
 Any MCP-compatible client can connect using:
 
 ```bash
-node /path/to/project/DevXMcp/build/index.js
+node /path/to/project/rsk-mcp-server/build/index.js
 ```
 
 ### 🌐 Remote Configuration (URL)
@@ -355,7 +355,7 @@ You can continue the flow according to what you need to do.
 ## 📁 Project Structure
 
 ```
-DevXMcp/
+rsk-mcp-server/
 ├── src/
 │   ├── handlers/
 │   │   └── responsesHandler.ts    # MCP response handling
