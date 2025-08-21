@@ -82,7 +82,7 @@ And add to the JSON file:
       "command": "npx",
       "args": [
         "-y",
-        "rsk-mcp-server"
+        "@rsksmart/rsk-mcp-server"
       ]
     }
   }
@@ -118,7 +118,7 @@ Click the “Edit Config” button to open the configuration file and add the fo
       "command": "npx",
       "args": [
         "-y",
-        "rsk-mcp-server"
+        "@rsksmart/rsk-mcp-server"
       ]
     }
   }
