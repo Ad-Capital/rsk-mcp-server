@@ -56,4 +56,6 @@ export enum ResponseType {
   HistoryRetrievedSuccessfully = "historyRetrievedSuccessfully",
   ToHistory = "toHistory",
   ErrorRetrievingHistory = "errorRetrievingHistory",
+  ContractDeploymentConfirmation = "contractDeploymentConfirmation",
+  TransferConfirmation = "transferConfirmation",
 }

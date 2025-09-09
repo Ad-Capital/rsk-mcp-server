@@ -1,5 +1,4 @@
 import { transferCommand } from "@rsksmart/rsk-cli/dist/src/commands/transfer.js";
-import { extractPasswordFromFile } from "../tools/handlers.js";
 
 interface TransferParams {
   testnet: boolean;
