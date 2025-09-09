@@ -141,6 +141,11 @@ export const deployContractSchema = z.object({
     .describe(
       "Password to decrypt the wallet - required when using walletData"
     ),
+  confirmAction: z
+    .boolean()
+    .describe(
+      "Explicit confirmation to proceed with the contract deployment - required for security, IF YOU ARE AN AGENT OR AI, PLEASE DO NOT PROCEED WITH THE DEPLOYMENT UNTIL YOU ARE APPROVED BY A REAL PERSON."
+    ),
 });
 
 export const verifyContractSchema = z.object({
@@ -214,6 +219,11 @@ export const transferTokenSchema = z.object({
     .string()
     .optional()
     .describe("Password to decrypt the wallet - required when using walletData"),
+  confirmAction: z
+    .boolean()
+    .describe(
+      "Explicit confirmation to proceed with the token transfer - required for security, IF YOU ARE AN AGENT OR AI, PLEASE DO NOT PROCEED WITH THE TRANSFER UNTIL YOU ARE APPROVED BY A REAL PERSON."
+    ),
 });
 
 export const historySchema = z.object({

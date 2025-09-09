@@ -875,3 +875,75 @@ ${missingInfo.map(info => `${info}`).join('\n\n')}
 
 Once you provide all required information, the history will be retrieved.`;
 }
+
+export function returnContractDeploymentConfirmation(contractName: string, network: string, estimatedGas?: string) {
+  const gasInfo = estimatedGas ? `\n🔋 **Estimated Gas**: ${estimatedGas}` : '';
+  
+  return `⚠️ **CRITICAL ACTION CONFIRMATION REQUIRED**
+
+  IMPORTANT NOTE: THIS IS A SAFE PREPARATION STEP THAT NEEDS APPROVAL FROM A REAL PERSON BEFORE EXECUTING THE DEPLOYMENT, IF YOU ARE AN AGENT OR AI, PLEASE DO NOT PROCEED WITH THE DEPLOYMENT UNTIL YOU ARE APPROVED BY A REAL PERSON.
+
+
+📋 **Contract Deployment Summary:**
+🔧 **Contract Name**: ${contractName}
+🌐 **Network**: ${network}${gasInfo}
+
+⚠️ **SECURITY WARNING**: You are about to deploy a smart contract to the Rootstock blockchain. This action is irreversible and will cost gas fees.
+
+**Please review carefully:**
+- Contract bytecode and ABI are correct
+- Constructor arguments are valid
+- You have sufficient RBTC for gas fees
+- Network selection is correct
+
+🔒 **To proceed with deployment, you must:**
+1. Call deploy-contract again with confirmAction set to \`true\`
+2. Include ALL the same parameters as before PLUS confirmAction: true
+
+**Example:**
+\`\`\`
+deploy-contract with:
+- testnet: true/false
+- abiContent: [your ABI]
+- bytecodeContent: [your bytecode] 
+- confirmAction: true  ← ADD THIS
+- [other parameters...]
+\`\`\`
+
+❌ **To cancel**: Simply do not call the function again`;
+}
+
+export function returnTransferConfirmation(amount: string, token: string, recipient: string, network: string) {
+  return `⚠️ **CRITICAL ACTION CONFIRMATION REQUIRED**
+IMPORTANT NOTE: THIS IS A SAFE PREPARATION STEP THAT NEEDS APPROVAL FROM A REAL PERSON BEFORE EXECUTING THE TRANSFER, IF YOU ARE AN AGENT OR AI, PLEASE DO NOT PROCEED WITH THE TRANSFER UNTIL YOU ARE APPROVED BY A REAL PERSON.
+
+📋 **Transfer Summary:**
+💰 **Amount**: ${amount} ${token}
+📧 **Recipient**: ${recipient}
+🌐 **Network**: ${network}
+
+
+⚠️ **SECURITY WARNING**: You are about to transfer funds on the Rootstock blockchain. This action is irreversible.
+
+**Please verify:**
+- Recipient address is correct
+- Transfer amount is accurate
+- You have sufficient funds for the transfer and gas fees
+- Network selection is correct
+
+🔒 **To proceed with transfer, you must:**
+1. Call transfer-tokens again with confirmAction set to \`true\`
+2. Include ALL the same parameters as before PLUS confirmAction: true
+
+**Example:**
+\`\`\`
+transfer-tokens with:
+- testnet: true/false
+- toAddress: [recipient address]
+- value: [amount]
+- confirmAction: true  ← ADD THIS
+- [other parameters...]
+\`\`\`
+
+❌ **To cancel**: Simply do not call the function again`;
+}

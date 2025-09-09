@@ -37,6 +37,30 @@ import {
   returnWalletCreatedSuccessfully,
 } from "./utils/responses.js";
 
+interface PendingOperation {
+  id: string;
+  type: 'deploy' | 'transfer';
+  operation: string;
+  parameters: any;
+  timestamp: number;
+  requiresConfirmation: boolean;
+}
+
+const pendingOperations = new Map<string, PendingOperation>();
+
+function generateOperationId(): string {
+  return `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+function cleanExpiredOperations(): void {
+  const now = Date.now();
+  for (const [id, op] of pendingOperations.entries()) {
+    if (now - op.timestamp > 300000) {
+      pendingOperations.delete(id);
+    }
+  }
+}
+
 export function createMcpServer(): McpServer {
   const server = new McpServer({
     name: "rsk-mcp-server",
@@ -76,6 +100,147 @@ export function configureMcpTools(server: McpServer): void {
   );
 
   server.tool(
+    "list-pending-operations",
+    "List all pending operations that require user confirmation",
+    {},
+    async () => {
+      cleanExpiredOperations();
+      
+      const operations = Array.from(pendingOperations.values())
+        .map(op => ({
+          id: op.id,
+          type: op.type,
+          operation: op.operation,
+          timestamp: new Date(op.timestamp).toISOString(),
+          requiresConfirmation: op.requiresConfirmation
+        }));
+
+      if (operations.length === 0) {
+        return provideResponse(
+          "**No Pending Operations**\n\nThere are no operations waiting for confirmation.",
+          ResponseType.Interaction
+        );
+      }
+
+      const operationsList = operations
+        .map(op => `**${op.id}**\n   Type: ${op.type}\n   Operation: ${op.operation}\n   Time: ${op.timestamp}`)
+        .join('\n\n');
+
+      return provideResponse(
+        `**Pending Operations Requiring Confirmation**\n\n${operationsList}\n\n**To confirm an operation, use**: confirm-operation with the operation ID`,
+        ResponseType.Interaction
+      );
+    }
+  );
+
+  server.tool(
+    "confirm-operation", 
+    "Confirm and execute a pending operation",
+    {
+      operationId: {
+        type: "string",
+        description: "The ID of the operation to confirm"
+      }
+    },
+    async ({ operationId }) => {
+      cleanExpiredOperations();
+      
+      if (!operationId) {
+        return provideResponse(
+          "**Missing Operation ID**\n\nPlease provide an operation ID to confirm.",
+          ResponseType.ErrorTryAgain
+        );
+      }
+
+      const operation = pendingOperations.get(operationId);
+      if (!operation) {
+        return provideResponse(
+          `**Operation Not Found**\n\nOperation ID '${operationId}' not found or has expired.\n\nUse 'list-pending-operations' to see available operations.`,
+          ResponseType.ErrorTryAgain
+        );
+      }
+
+      pendingOperations.delete(operationId);
+      console.warn(`**OPERATION CONFIRMED**: ${operationId} - ${operation.operation}`);
+
+      if (operation.type === 'deploy') {
+        const deploymentService = new ContractDeploymentService();
+        const result = await deploymentService.processContractDeployment(operation.parameters);
+        
+        if (result.success) {
+          return provideResponse(
+            returnContractDeployedSuccessfully("", result.data),
+            ResponseType.ContractDeployedSuccessfully
+          );
+        } else {
+          return provideResponse(
+            result.error || "Contract deployment failed with unknown error", 
+            ResponseType.ErrorDeployingContract
+          );
+        }
+      } else if (operation.type === 'transfer') {
+        const transferService = new TransferService();
+        const result = await transferService.processTransfer(operation.parameters);
+        
+        if (result.success) {
+          const networkName = result.data.network || (operation.parameters.testnet ? "Rootstock Testnet" : "Rootstock Mainnet");
+          return provideResponse(
+            returnTransferCompletedSuccessfully(networkName, result.data),
+            ResponseType.TransferCompletedSuccessfully
+          );
+        } else {
+          return provideResponse(
+            result.error || "Transfer failed with unknown error",
+            ResponseType.ErrorTransferFailed
+          );
+        }
+      }
+
+      return provideResponse(
+        "**Unknown Operation Type**\n\nThe operation type is not supported.",
+        ResponseType.ErrorTryAgain
+      );
+    }
+  );
+
+  server.tool(
+    "cancel-operation",
+    "Cancel a pending operation",
+    {
+      operationId: {
+        type: "string",
+        description: "The ID of the operation to cancel"
+      }
+    },
+    async ({ operationId }) => {
+      cleanExpiredOperations();
+      
+      if (!operationId) {
+        return provideResponse(
+          "**Missing Operation ID**\n\nPlease provide an operation ID to cancel.",
+          ResponseType.ErrorTryAgain
+        );
+      }
+
+      const operation = pendingOperations.get(operationId);
+      if (!operation) {
+        return provideResponse(
+          `**Operation Not Found**\n\nOperation ID '${operationId}' not found or has already expired.\n\nUse 'list-pending-operations' to see available operations.`,
+          ResponseType.ErrorTryAgain
+        );
+      }
+
+      pendingOperations.delete(operationId);
+      console.warn(`OPERATION CANCELLED: ${operationId} - ${operation.operation}`);
+
+      return provideResponse(
+        `**Operation Cancelled**\n\n**Operation ID**: \`${operationId}\`\n**Operation**: ${operation.operation}\n\nThe operation has been successfully cancelled and removed from pending operations.`,
+        ResponseType.Interaction
+      );
+    }
+  );
+
+  server.tool(
     "create-wallet",
     "Create a new wallet based on the selected option. This function will ask for required information step by step.",
     createWalletSchema.shape,
@@ -94,7 +259,7 @@ export function configureMcpTools(server: McpServer): void {
     }) => {
       if (!createWalletOptions.includes(walletOption as any)) {
         return provideResponse(
-          `❌ **Invalid Option**\n\nThe option "${walletOption}" is not recognized. Please select a valid option.`,
+          `**Invalid Option**\n\nThe option "${walletOption}" is not recognized. Please select a valid option.`,
           ResponseType.ErrorTryAgain
         );
       }
@@ -250,7 +415,7 @@ export function configureMcpTools(server: McpServer): void {
           content: [
             {
               type: "text",
-              text: `❌ **Error processing wallet data**
+              text: `**Error processing wallet data**
 
 Error: ${errorMsg}
 
@@ -321,7 +486,45 @@ Please ensure you're providing the complete wallet creation result.`,
     "deploy-contract",
     "Deploy a smart contract to the Rootstock blockchain using ABI and bytecode",
     deployContractSchema.shape,
-    async ({ testnet, abiContent, bytecodeContent, constructorArgs, walletName, walletData, walletPassword }) => {
+    async ({ testnet, abiContent, bytecodeContent, constructorArgs, walletName, walletData, walletPassword, confirmAction }) => {
+      console.warn('CRITICAL OPERATION: Contract deployment requested');
+      console.warn('Confirmation status:', confirmAction);
+      console.warn('Network:', testnet ? 'Testnet' : 'Mainnet');
+      
+      if (confirmAction !== true) {
+        cleanExpiredOperations();
+        
+        const operationId = generateOperationId();
+        const network = testnet ? "Rootstock Testnet" : "Rootstock Mainnet";
+        let contractName = "Smart Contract";
+        
+        try {
+          const abi = JSON.parse(abiContent);
+          const constructorAbi = abi.find((item: any) => item.type === 'constructor');
+          if (constructorAbi && constructorAbi.name) {
+            contractName = constructorAbi.name;
+          }
+        } catch (error) {
+          
+        }
+        
+        pendingOperations.set(operationId, {
+          id: operationId,
+          type: 'deploy',
+          operation: `Deploy ${contractName} to ${network}`,
+          parameters: { testnet, abiContent, bytecodeContent, constructorArgs, walletName, walletData, walletPassword },
+          timestamp: Date.now(),
+          requiresConfirmation: true
+        });
+        
+        return provideResponse(
+          `**CRITICAL OPERATION PENDING**\n\n**Operation Details:**\n**Contract**: ${contractName}\n**Network**: ${network}\n**Operation ID**: \`${operationId}\`\n\n**This operation requires explicit confirmation for security.**\n\n**Next Steps:**\n1. Review the operation details carefully\n2. Use \`confirm-operation\` with ID: \`${operationId}\`\n3. Or use \`list-pending-operations\` to see all pending operations\n\n**This operation will expire in 5 minutes**`,
+          ResponseType.ContractDeploymentConfirmation
+        );
+      }
+      
+      console.warn('CRITICAL OPERATION CONFIRMED: Proceeding with contract deployment');
+
       const deploymentService = new ContractDeploymentService();
 
       const result = await deploymentService.processContractDeployment({
@@ -415,7 +618,37 @@ Please ensure you're providing the complete wallet creation result.`,
     "transfer-tokens",
     "Transfer RBTC or ERC20 tokens on Rootstock blockchain between wallets",
     transferTokenSchema.shape,
-    async ({ testnet, toAddress, value, tokenAddress, walletName, walletData, walletPassword }) => {
+    async ({ testnet, toAddress, value, tokenAddress, walletName, walletData, walletPassword, confirmAction }) => {
+      console.warn('CRITICAL OPERATION: Token transfer requested');
+      console.warn('Confirmation status:', confirmAction);
+      console.warn('Amount:', value, tokenAddress ? 'ERC20' : 'RBTC');
+      console.warn('To:', toAddress);
+      console.warn('🌐 Network:', testnet ? 'Testnet' : 'Mainnet');
+      
+      if (confirmAction !== true) {
+        cleanExpiredOperations();
+        
+        const operationId = generateOperationId();
+        const network = testnet ? "Rootstock Testnet" : "Rootstock Mainnet";
+        const token = tokenAddress ? "ERC20 Token" : "RBTC";
+        
+        pendingOperations.set(operationId, {
+          id: operationId,
+          type: 'transfer',
+          operation: `Transfer ${value} ${token} to ${toAddress.substring(0, 6)}...${toAddress.substring(38)} on ${network}`,
+          parameters: { testnet, toAddress, value, tokenAddress, walletName, walletData, walletPassword },
+          timestamp: Date.now(),
+          requiresConfirmation: true
+        });
+        
+        return provideResponse(
+          `⚠️ **CRITICAL OPERATION PENDING**\n\n**Transfer Details:**\n**Amount**: ${value} ${token}\n**To**: ${toAddress}\n**Network**: ${network}\n**Operation ID**: \`${operationId}\`\n\n**This operation requires explicit confirmation for security.**\n\n**Next Steps:**\n1. Review the transfer details carefully\n2. Use \`confirm-operation\` with ID: \`${operationId}\`\n3. Or use \`list-pending-operations\` to see all pending operations\n\n**This operation will expire in 5 minutes**`,
+          ResponseType.TransferConfirmation
+        );
+      }
+      
+      console.warn('CRITICAL OPERATION CONFIRMED: Proceeding with token transfer');
+
       const transferService = new TransferService();
 
       const result = await transferService.processTransfer({
