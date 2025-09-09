@@ -18,18 +18,3 @@ export const createWalletOptions = [
   "📝 Update wallet name",
   "❌ Delete wallet",
 ] as const;
-
-
-export const dangerousPatterns = [
-    /script/i,
-    /select/i,
-    /insert/i,
-    /delete/i,
-    /drop/i,
-    /union/i,
-    /<script/i,
-    /javascript:/i,
-    /on\w+=/i,
-    /eval\(/i,
-    /exec\(/i,
-  ];

@@ -41,8 +41,9 @@ export function returnSecurePasswordMethod() {
 4. Call create-wallet again
 
 **Password Requirements:**
-- Between 6-20 characters
+- Between 6-128 characters
 - Letters, numbers, and safe symbols (!@#$%^&*()_+-=[]{};"'|,.<>?/)
+- Use a strong password with a mix of uppercase and lowercase letters, numbers, and special characters.
 - No script or SQL injection patterns
 
 **OR** provide password directly (⚠️ less secure - visible in chat)`;
