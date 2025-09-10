@@ -1,5 +1,5 @@
 {
-  "name": "rsk-mcp-server",
+  "name": "@rsksmart/rsk-mcp-server",
   "version": "0.2.1",
   "description": "MCP Server for Rootstock Blockchain",
   "keywords": [
@@ -19,7 +19,7 @@
   "homepage": "https://github.com/rsksmart/rsk-mcp-server",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rsksmart/rsk-mcp-server.git"
+    "url": "git+https://github.com/rsksmart/rsk-mcp-server.git"
   },
   "type": "module",
   "bin": {
