@@ -64,7 +64,7 @@ function cleanExpiredOperations(): void {
 export function createMcpServer(): McpServer {
   const server = new McpServer({
     name: "rsk-mcp-server",
-    version: "0.2.1",
+    version: "0.2.2",
     capabilities: {
       resources: {},
       tools: {},
