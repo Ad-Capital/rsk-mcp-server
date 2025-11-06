@@ -947,3 +947,109 @@ transfer-tokens with:
 
 ❌ **To cancel**: Simply do not call the function again`;
 }
+
+// Attestation Response Functions
+export function returnAttestationIssuedSuccessfully(network: string, data: any) {
+  const networkName = network || "Rootstock";
+  const explorerUrl = data.explorerUrl ? `🔗 **Explorer**: ${data.explorerUrl}` : "";
+  
+  return `✅ **Attestation Issued Successfully!**
+
+📋 **Attestation Details:**
+• **UID**: \`${data.uid}\`
+• **Recipient**: \`${data.recipient}\`
+• **Schema**: \`${data.schema}\`
+• **Network**: ${networkName}
+• **Transaction Hash**: \`${data.transactionHash}\`
+${explorerUrl}
+
+🎉 Your attestation has been successfully created and is now available on the blockchain!`;
+}
+
+export function returnAttestationVerifiedSuccessfully(network: string, data: any) {
+  const networkName = network || "Rootstock";
+  const attestation = data.attestation;
+  const revocationStatus = attestation.revocationTime > 0 ? "❌ REVOKED" : "✅ ACTIVE";
+  
+  return `✅ **Attestation Verified Successfully!**
+
+📋 **Attestation Details:**
+• **UID**: \`${attestation.uid}\`
+• **Attester**: \`${attestation.attester}\`
+• **Recipient**: \`${attestation.recipient}\`
+• **Schema**: \`${attestation.schema}\`
+• **Status**: ${revocationStatus}
+• **Created**: ${new Date(attestation.time * 1000).toISOString()}
+• **Revocable**: ${attestation.revocable ? "Yes" : "No"}
+• **Network**: ${networkName}
+
+${attestation.revocationTime > 0 ? 
+  `• **Revoked**: ${new Date(attestation.revocationTime * 1000).toISOString()}` : 
+  ""}
+
+🔍 Attestation details have been successfully retrieved and verified!`;
+}
+
+export function returnAttestationRevokedSuccessfully(network: string, data: any) {
+  const networkName = network || "Rootstock";
+  const explorerUrl = data.explorerUrl ? `🔗 **Explorer**: ${data.explorerUrl}` : "";
+  
+  return `✅ **Attestation Revoked Successfully!**
+
+📋 **Revocation Details:**
+• **UID**: \`${data.uid}\`
+• **Network**: ${networkName}
+• **Transaction Hash**: \`${data.transactionHash}\`
+${explorerUrl}
+
+❌ The attestation has been successfully revoked and is no longer valid.`;
+}
+
+export function returnAttestationsListedSuccessfully(data: any) {
+  const { attestations, count, network } = data;
+  const networkName = network || "Rootstock";
+  
+  if (count === 0) {
+    return `📋 **No Attestations Found**
+
+No attestations were found matching your search criteria on ${networkName}.
+
+Try adjusting your search filters or check different addresses.`;
+  }
+
+  const attestationsList = attestations.map((attestation: any, index: number) => {
+    const status = attestation.revocationTime > 0 ? "❌ REVOKED" : "✅ ACTIVE";
+    return `**${index + 1}. Attestation**
+• **UID**: \`${attestation.uid}\`
+• **Attester**: \`${attestation.attester}\`
+• **Recipient**: \`${attestation.recipient}\`
+• **Schema**: \`${attestation.schema}\`
+• **Status**: ${status}
+• **Created**: ${new Date(attestation.time * 1000).toISOString()}`;
+  }).join('\n\n');
+
+  return `📋 **Attestations Retrieved Successfully!**
+
+**Found ${count} attestation${count === 1 ? '' : 's'} on ${networkName}**
+
+${attestationsList}
+
+🔍 Use the UID to verify or interact with specific attestations.`;
+}
+
+export function returnSchemaCreatedSuccessfully(network: string, data: any) {
+  const networkName = network || "Rootstock";
+  const explorerUrl = data.explorerUrl ? `🔗 **Explorer**: ${data.explorerUrl}` : "";
+  
+  return `✅ **Schema Created Successfully!**
+
+📋 **Schema Details:**
+• **UID**: \`${data.uid}\`
+• **Schema**: \`${data.schema}\`
+• **Revocable**: ${data.revocable ? "Yes" : "No"}
+• **Network**: ${networkName}
+• **Transaction Hash**: \`${data.transactionHash}\`
+${explorerUrl}
+
+🎉 Your schema has been successfully created and can now be used for attestations!`;
+}

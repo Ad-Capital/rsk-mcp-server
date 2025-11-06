@@ -16,6 +16,9 @@
 - ✅ **Contract Verification**: Verify deployed contracts
 - 📄 **Contract Interaction**: Read data from verified contracts
 - 📊 **History**: Query transaction history
+- 🎯 **Attestations**: Create, verify, and manage attestations using RAS (Rootstock Attestation Service)
+- 🏗️ **Schema Management**: Create and manage attestation schemas
+- 📝 **Attestation Queries**: List and filter attestations by various criteria
 
 ## 📋 Prerequisites
 
@@ -418,6 +421,67 @@ You can continue the flow according to what you need to do.
 - **Chain ID:** 31
 - **Explorer:** `https://explorer.testnet.rsk.co`
 
+### 8. 🎯 Attestation Management
+
+#### Available Attestation Tools:
+- `issue-attestation`: Create new attestations
+- `verify-attestation`: Verify existing attestations
+- `revoke-attestation`: Revoke attestations
+- `list-attestations`: Query attestations with filters
+- `create-schema`: Create new attestation schemas
+
+**🎯 Issue Attestation**
+```typescript
+{
+  testnet: true,
+  recipient: "0x...", // recipient address
+  schema: "0x...", // schema UID
+  data: "encoded_data", // schema-encoded data
+  expirationTime: 0, // optional timestamp
+  revocable: true // optional
+}
+```
+
+**🔍 Verify Attestation**
+```typescript
+{
+  testnet: true,
+  uid: "0x..." // attestation UID
+}
+```
+
+**❌ Revoke Attestation**
+```typescript
+{
+  testnet: true,
+  uid: "0x...", // attestation UID
+  walletName: "MyWallet", // optional
+  walletPassword: "password" // required with walletData
+}
+```
+
+**📋 List Attestations**
+```typescript
+{
+  testnet: true,
+  recipient: "0x...", // optional filter
+  attester: "0x...", // optional filter  
+  schema: "0x...", // optional filter
+  limit: 10 // optional limit
+}
+```
+
+**🏗️ Create Schema**
+```typescript
+{
+  testnet: true,
+  schema: "uint256 tokenId, string name", // schema definition
+  revocable: true,
+  resolverAddress: "0x...", // optional
+  walletName: "MyWallet" // optional
+}
+```
+
 ## 📁 Project Structure
 
 ```
@@ -425,6 +489,14 @@ rsk-mcp-server/
 ├── src/
 │   ├── handlers/
 │   │   └── responsesHandler.ts    # MCP response handling
+│   ├── services/
+│   │   ├── AttestationService.ts  # Attestation operations
+│   │   ├── ContractDeploymentService.ts # Contract deployment
+│   │   ├── ContractReadService.ts # Contract reading
+│   │   ├── ContractVerificationService.ts # Contract verification
+│   │   ├── HistoryService.ts      # Transaction history
+│   │   ├── TransferService.ts     # Token transfers
+│   │   └── WalletService.ts       # Wallet management
 │   ├── tools/
 │   │   ├── constants.ts           # Constants and options
 │   │   ├── handlers.ts            # Auxiliary handlers
@@ -432,6 +504,7 @@ rsk-mcp-server/
 │   │   └── types.ts               # TypeScript types
 │   ├── utils/
 │   │   └── responses.ts           # Response utilities
+│   ├── server-config.ts           # MCP server configuration
 │   ├── index.ts                   # Main entry point
 │   └── types.d.ts                 # Type declarations
 ├── build/                         # Compiled code (generated)

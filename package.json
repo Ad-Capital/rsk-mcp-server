@@ -1,7 +1,7 @@
 {
   "name": "@rsksmart/rsk-mcp-server",
-  "version": "0.2.3",
-  "description": "MCP Server for Rootstock Blockchain",
+  "version": "0.3.0",
+  "description": "MCP Server for Rootstock Blockchain with Attestation Support",
   "keywords": [
     "mcp",
     "model-context-protocol",
@@ -12,7 +12,10 @@
     "cursor",
     "claude",
     "mcp-server",
-    "rsk-cli"
+    "rsk-cli",
+    "attestation",
+    "eas",
+    "schema"
   ],
   "license": "MIT",
   "author": "Sebastian G",
@@ -38,7 +41,7 @@
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.2",
-    "@rsksmart/rsk-cli": "^1.3.1",
+    "@rsksmart/rsk-cli": "^1.4.0",
     "@types/inquirer": "^9.0.8",
     "inquirer": "^12.7.0",
     "zod": "^3.25.67"

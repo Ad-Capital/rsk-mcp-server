@@ -58,4 +58,16 @@ export enum ResponseType {
   ErrorRetrievingHistory = "errorRetrievingHistory",
   ContractDeploymentConfirmation = "contractDeploymentConfirmation",
   TransferConfirmation = "transferConfirmation",
+  
+  // Attestation Response Types
+  AttestationIssuedSuccessfully = "attestationIssuedSuccessfully",
+  ErrorIssuingAttestation = "errorIssuingAttestation",
+  AttestationVerifiedSuccessfully = "attestationVerifiedSuccessfully",
+  ErrorVerifyingAttestation = "errorVerifyingAttestation",
+  AttestationRevokedSuccessfully = "attestationRevokedSuccessfully",
+  ErrorRevokingAttestation = "errorRevokingAttestation",
+  AttestationsListedSuccessfully = "attestationsListedSuccessfully",
+  ErrorListingAttestations = "errorListingAttestations",
+  SchemaCreatedSuccessfully = "schemaCreatedSuccessfully",
+  ErrorCreatingSchema = "errorCreatingSchema",
 }

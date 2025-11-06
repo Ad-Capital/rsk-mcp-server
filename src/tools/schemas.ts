@@ -241,3 +241,117 @@ export const historySchema = z.object({
     .optional()
     .describe("Your previously saved wallet configuration file content (my-wallets.json)"),
 });
+
+// Attestation Schemas
+export const issueAttestationSchema = z.object({
+  testnet: z.boolean().describe("Use testnet (true) or mainnet (false)"),
+  recipient: z
+    .string()
+    .describe("Recipient address for the attestation (0x... format)"),
+  schema: z
+    .string()
+    .describe("Schema UID for the attestation (0x... format)"),
+  data: z
+    .string()
+    .describe("Encoded attestation data - use schema encoder format"),
+  expirationTime: z
+    .number()
+    .optional()
+    .describe("Expiration timestamp (Unix timestamp) - 0 for no expiration"),
+  revocable: z
+    .boolean()
+    .optional()
+    .describe("Whether the attestation can be revoked (default: true)"),
+  refUID: z
+    .string()
+    .optional()
+    .describe("Reference UID to another attestation (0x... format)"),
+  value: z
+    .number()
+    .optional()
+    .describe("ETH value to send with attestation (default: 0)"),
+  walletName: z
+    .string()
+    .optional()
+    .describe("Specific wallet name to use - uses current wallet if not provided"),
+  walletData: z
+    .custom<WalletData>()
+    .optional()
+    .describe("Your previously saved wallet configuration file content (my-wallets.json)"),
+  walletPassword: z
+    .string()
+    .optional()
+    .describe("Password to decrypt the wallet - required when using walletData"),
+});
+
+export const verifyAttestationSchema = z.object({
+  testnet: z.boolean().describe("Use testnet (true) or mainnet (false)"),
+  uid: z
+    .string()
+    .describe("Attestation UID to verify (0x... format)"),
+});
+
+export const revokeAttestationSchema = z.object({
+  testnet: z.boolean().describe("Use testnet (true) or mainnet (false)"),
+  uid: z
+    .string()
+    .describe("Attestation UID to revoke (0x... format)"),
+  walletName: z
+    .string()
+    .optional()
+    .describe("Specific wallet name to use - uses current wallet if not provided"),
+  walletData: z
+    .custom<WalletData>()
+    .optional()
+    .describe("Your previously saved wallet configuration file content (my-wallets.json)"),
+  walletPassword: z
+    .string()
+    .optional()
+    .describe("Password to decrypt the wallet - required when using walletData"),
+});
+
+export const listAttestationsSchema = z.object({
+  testnet: z.boolean().describe("Use testnet (true) or mainnet (false)"),
+  recipient: z
+    .string()
+    .optional()
+    .describe("Filter by recipient address (0x... format)"),
+  attester: z
+    .string()
+    .optional()
+    .describe("Filter by attester address (0x... format)"),
+  schema: z
+    .string()
+    .optional()
+    .describe("Filter by schema UID (0x... format)"),
+  limit: z
+    .number()
+    .optional()
+    .describe("Maximum number of attestations to return (default: 10)"),
+});
+
+export const createSchemaSchema = z.object({
+  testnet: z.boolean().describe("Use testnet (true) or mainnet (false)"),
+  schema: z
+    .string()
+    .describe("Schema definition string (e.g., 'uint256 tokenId, string name')"),
+  resolverAddress: z
+    .string()
+    .optional()
+    .describe("Resolver contract address (0x... format) - uses zero address if not provided"),
+  revocable: z
+    .boolean()
+    .describe("Whether attestations using this schema can be revoked"),
+  walletName: z
+    .string()
+    .optional()
+    .describe("Specific wallet name to use - uses current wallet if not provided"),
+  walletData: z
+    .custom<WalletData>()
+    .optional()
+    .describe("Your previously saved wallet configuration file content (my-wallets.json)"),
+  walletPassword: z
+    .string()
+    .optional()
+    .describe("Password to decrypt the wallet - required when using walletData"),
+});

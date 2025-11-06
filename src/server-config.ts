@@ -12,6 +12,11 @@ import {
   transferTokenSchema,
   useWalletFromCreationSchema,
   verifyContractSchema,
+  issueAttestationSchema,
+  verifyAttestationSchema,
+  revokeAttestationSchema,
+  listAttestationsSchema,
+  createSchemaSchema,
 } from "./tools/schemas.js";
 import { provideResponse } from "./handlers/responsesHandler.js";
 import { ResponseType } from "./tools/types.js";
@@ -21,6 +26,7 @@ import { ContractVerificationService } from "./services/ContractVerificationServ
 import { ContractReadService } from "./services/ContractReadService.js";
 import { TransferService } from "./services/TransferService.js";
 import { HistoryService } from "./services/HistoryService.js";
+import { AttestationService } from "./services/AttestationService.js";
 import {
   returnCheckBalanceSuccess,
   returnContractDeployedSuccessfully,
@@ -35,6 +41,11 @@ import {
   returnTransactionFound,
   returnTransferCompletedSuccessfully,
   returnWalletCreatedSuccessfully,
+  returnAttestationIssuedSuccessfully,
+  returnAttestationVerifiedSuccessfully,
+  returnAttestationRevokedSuccessfully,
+  returnAttestationsListedSuccessfully,
+  returnSchemaCreatedSuccessfully,
 } from "./utils/responses.js";
 
 interface PendingOperation {
@@ -704,6 +715,171 @@ Please ensure you're providing the complete wallet creation result.`,
         return provideResponse(
           result.error || "Failed to retrieve transaction history",
           ResponseType[responseType] || ResponseType.ErrorRetrievingHistory
+        );
+      }
+    }
+  );
+
+  // Attestation Tools
+  server.tool(
+    "issue-attestation",
+    "Issue a new attestation on Rootstock network using RAS (Rootstock Attestation Service)",
+    issueAttestationSchema.shape,
+    async ({ testnet, recipient, schema, data, expirationTime, revocable, refUID, value, walletName, walletData, walletPassword }) => {
+      const attestationService = new AttestationService();
+
+      const result = await attestationService.processIssueAttestation({
+        testnet,
+        recipient,
+        schema,
+        data,
+        expirationTime,
+        revocable,
+        refUID,
+        value,
+        walletName,
+        walletData,
+        walletPassword,
+      });
+
+      if (result.success) {
+        const networkName = testnet ? "Rootstock Testnet" : "Rootstock Mainnet";
+        const responseType = result.responseType as keyof typeof ResponseType;
+        return provideResponse(
+          returnAttestationIssuedSuccessfully(networkName, result.data),
+          ResponseType[responseType] || ResponseType.AttestationIssuedSuccessfully
+        );
+      } else {
+        const responseType = result.responseType as keyof typeof ResponseType;
+        return provideResponse(
+          result.error || "Failed to issue attestation",
+          ResponseType[responseType] || ResponseType.ErrorIssuingAttestation
+        );
+      }
+    }
+  );
+
+  server.tool(
+    "verify-attestation",
+    "Verify an existing attestation by UID on Rootstock network",
+    verifyAttestationSchema.shape,
+    async ({ testnet, uid }) => {
+      const attestationService = new AttestationService();
+
+      const result = await attestationService.processVerifyAttestation({
+        testnet,
+        uid,
+      });
+
+      if (result.success) {
+        const networkName = testnet ? "Rootstock Testnet" : "Rootstock Mainnet";
+        const responseType = result.responseType as keyof typeof ResponseType;
+        return provideResponse(
+          returnAttestationVerifiedSuccessfully(networkName, result.data),
+          ResponseType[responseType] || ResponseType.AttestationVerifiedSuccessfully
+        );
+      } else {
+        const responseType = result.responseType as keyof typeof ResponseType;
+        return provideResponse(
+          result.error || "Failed to verify attestation",
+          ResponseType[responseType] || ResponseType.ErrorVerifyingAttestation
+        );
+      }
+    }
+  );
+
+  server.tool(
+    "revoke-attestation",
+    "Revoke an existing attestation by UID on Rootstock network",
+    revokeAttestationSchema.shape,
+    async ({ testnet, uid, walletName, walletData, walletPassword }) => {
+      const attestationService = new AttestationService();
+
+      const result = await attestationService.processRevokeAttestation({
+        testnet,
+        uid,
+        walletName,
+        walletData,
+        walletPassword,
+      });
+
+      if (result.success) {
+        const networkName = testnet ? "Rootstock Testnet" : "Rootstock Mainnet";
+        const responseType = result.responseType as keyof typeof ResponseType;
+        return provideResponse(
+          returnAttestationRevokedSuccessfully(networkName, result.data),
+          ResponseType[responseType] || ResponseType.AttestationRevokedSuccessfully
+        );
+      } else {
+        const responseType = result.responseType as keyof typeof ResponseType;
+        return provideResponse(
+          result.error || "Failed to revoke attestation",
+          ResponseType[responseType] || ResponseType.ErrorRevokingAttestation
+        );
+      }
+    }
+  );
+
+  server.tool(
+    "list-attestations",
+    "List attestations with optional filters on Rootstock network",
+    listAttestationsSchema.shape,
+    async ({ testnet, recipient, attester, schema, limit }) => {
+      const attestationService = new AttestationService();
+
+      const result = await attestationService.processListAttestations({
+        testnet,
+        recipient,
+        attester,
+        schema,
+        limit,
+      });
+
+      if (result.success) {
+        const responseType = result.responseType as keyof typeof ResponseType;
+        return provideResponse(
+          returnAttestationsListedSuccessfully(result.data),
+          ResponseType[responseType] || ResponseType.AttestationsListedSuccessfully
+        );
+      } else {
+        const responseType = result.responseType as keyof typeof ResponseType;
+        return provideResponse(
+          result.error || "Failed to list attestations",
+          ResponseType[responseType] || ResponseType.ErrorListingAttestations
+        );
+      }
+    }
+  );
+
+  server.tool(
+    "create-schema",
+    "Create a new attestation schema on Rootstock network",
+    createSchemaSchema.shape,
+    async ({ testnet, schema, resolverAddress, revocable, walletName, walletData, walletPassword }) => {
+      const attestationService = new AttestationService();
+
+      const result = await attestationService.processCreateSchema({
+        testnet,
+        schema,
+        resolverAddress,
+        revocable,
+        walletName,
+        walletData,
+        walletPassword,
+      });
+
+      if (result.success) {
+        const networkName = testnet ? "Rootstock Testnet" : "Rootstock Mainnet";
+        const responseType = result.responseType as keyof typeof ResponseType;
+        return provideResponse(
+          returnSchemaCreatedSuccessfully(networkName, result.data),
+          ResponseType[responseType] || ResponseType.SchemaCreatedSuccessfully
+        );
+      } else {
+        const responseType = result.responseType as keyof typeof ResponseType;
+        return provideResponse(
+          result.error || "Failed to create schema",
+          ResponseType[responseType] || ResponseType.ErrorCreatingSchema
         );
       }
     }
