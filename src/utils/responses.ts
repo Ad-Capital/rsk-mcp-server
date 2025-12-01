@@ -948,7 +948,6 @@ transfer-tokens with:
 ❌ **To cancel**: Simply do not call the function again`;
 }
 
-// Attestation Response Functions
 export function returnAttestationIssuedSuccessfully(network: string, data: any) {
   const networkName = network || "Rootstock";
   const explorerUrl = data.explorerUrl ? `🔗 **Explorer**: ${data.explorerUrl}` : "";

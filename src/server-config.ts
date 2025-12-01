@@ -16,7 +16,7 @@ import {
   verifyAttestationSchema,
   revokeAttestationSchema,
   listAttestationsSchema,
-  createSchemaSchema,
+  createSchema,
 } from "./tools/schemas.js";
 import { provideResponse } from "./handlers/responsesHandler.js";
 import { ResponseType } from "./tools/types.js";
@@ -720,7 +720,6 @@ Please ensure you're providing the complete wallet creation result.`,
     }
   );
 
-  // Attestation Tools
   server.tool(
     "issue-attestation",
     "Issue a new attestation on Rootstock network using RAS (Rootstock Attestation Service)",
@@ -854,7 +853,7 @@ Please ensure you're providing the complete wallet creation result.`,
   server.tool(
     "create-schema",
     "Create a new attestation schema on Rootstock network",
-    createSchemaSchema.shape,
+    createSchema.shape,
     async ({ testnet, schema, resolverAddress, revocable, walletName, walletData, walletPassword }) => {
       const attestationService = new AttestationService();
 

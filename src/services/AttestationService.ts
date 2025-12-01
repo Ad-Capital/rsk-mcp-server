@@ -123,7 +123,6 @@ export class AttestationService {
 
   async processRevokeAttestation(params: RevokeAttestationParams): Promise<AttestationServiceResult> {
     try {
-      // First verify the attestation to get its schema
       const verifyResult = await attestationCommand({
         testnet: params.testnet,
         isExternal: true,

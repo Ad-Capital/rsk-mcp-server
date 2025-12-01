@@ -242,7 +242,6 @@ export const historySchema = z.object({
     .describe("Your previously saved wallet configuration file content (my-wallets.json)"),
 });
 
-// Attestation Schemas
 export const issueAttestationSchema = z.object({
   testnet: z.boolean().describe("Use testnet (true) or mainnet (false)"),
   recipient: z
@@ -330,7 +329,7 @@ export const listAttestationsSchema = z.object({
     .describe("Maximum number of attestations to return (default: 10)"),
 });
 
-export const createSchemaSchema = z.object({
+export const createSchema = z.object({
   testnet: z.boolean().describe("Use testnet (true) or mainnet (false)"),
   schema: z
     .string()

@@ -59,7 +59,6 @@ export enum ResponseType {
   ContractDeploymentConfirmation = "contractDeploymentConfirmation",
   TransferConfirmation = "transferConfirmation",
   
-  // Attestation Response Types
   AttestationIssuedSuccessfully = "attestationIssuedSuccessfully",
   ErrorIssuingAttestation = "errorIssuingAttestation",
   AttestationVerifiedSuccessfully = "attestationVerifiedSuccessfully",
