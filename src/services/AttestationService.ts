@@ -399,6 +399,44 @@ export class AttestationService {
     }
   }
 
+  private buildGraphQLQuery(params: ListAttestationsParams): string {
+    const limit = params.limit || 10;
+    const filters: string[] = [];
+
+    if (params.recipient) {
+      filters.push(`recipient: { equals: "${params.recipient.toLowerCase()}" }`);
+    }
+    if (params.attester) {
+      filters.push(`attester: { equals: "${params.attester.toLowerCase()}" }`);
+    }
+    if (params.schema) {
+      filters.push(`schemaId: { equals: "${params.schema.toLowerCase()}" }`);
+    }
+
+    const whereClause = filters.length > 0 ? `where: { ${filters.join(', ')} }` : '';
+
+    return `
+      query Attestations {
+        attestations(
+          ${whereClause}
+          take: ${limit}
+          orderBy: { time: desc }
+        ) {
+          id
+          attester
+          recipient
+          refUID
+          revocable
+          revocationTime
+          expirationTime
+          data
+          schemaId
+          time
+        }
+      }
+    `;
+  }
+
   async processCreateSchema(params: CreateSchemaParams): Promise<AttestationServiceResult> {
     try {
       const signer = await createAttestationSigner({
