@@ -968,23 +968,32 @@ ${explorerUrl}
 export function returnAttestationVerifiedSuccessfully(network: string, data: any) {
   const networkName = network || "Rootstock";
   const attestation = data.attestation;
-  const revocationStatus = attestation.revocationTime > 0 ? "❌ REVOKED" : "✅ ACTIVE";
-  
+
+  if (data.status === "not_found") {
+    return `⚠️ **Attestation Not Found**
+
+• **UID**: \`${data.uid}\`
+• **Network**: ${networkName}
+
+No attestation exists with this UID on ${networkName}.`;
+  }
+
+  const statusLabel =
+    data.status === "revoked" ? "❌ REVOKED" :
+    data.status === "expired" ? "⏰ EXPIRED" :
+    "✅ ACTIVE";
+
   return `✅ **Attestation Verified Successfully!**
 
 📋 **Attestation Details:**
-• **UID**: \`${attestation.uid}\`
+• **UID**: \`${data.uid}\`
 • **Attester**: \`${attestation.attester}\`
 • **Recipient**: \`${attestation.recipient}\`
 • **Schema**: \`${attestation.schema}\`
-• **Status**: ${revocationStatus}
+• **Status**: ${statusLabel}
 • **Created**: ${new Date(attestation.time * 1000).toISOString()}
-• **Revocable**: ${attestation.revocable ? "Yes" : "No"}
 • **Network**: ${networkName}
-
-${attestation.revocationTime > 0 ? 
-  `• **Revoked**: ${new Date(attestation.revocationTime * 1000).toISOString()}` : 
-  ""}
+${attestation.revocationTime > 0 ? `\n• **Revoked**: ${new Date(attestation.revocationTime * 1000).toISOString()}` : ""}
 
 🔍 Attestation details have been successfully retrieved and verified!`;
 }
@@ -1051,4 +1060,53 @@ export function returnSchemaCreatedSuccessfully(network: string, data: any) {
 ${explorerUrl}
 
 🎉 Your schema has been successfully created and can now be used for attestations!`;
+}
+
+export function returnDeploymentAttestedSuccessfully(network: string, data: any) {
+  const networkName = network || "Rootstock";
+
+  return `✅ **Deployment Attestation Created Successfully!**
+
+📋 **Attestation Details:**
+• **UID**: \`${data.uid}\`
+• **Contract**: \`${data.contractAddress}\`
+• **Contract Name**: ${data.contractName}
+• **Deployer**: \`${data.deployer}\`
+• **Network**: ${networkName}
+• **View**: ${data.viewUrl}
+
+🔗 This deployment is now attested on-chain via the Rootstock Attestation Service (RAS).`;
+}
+
+export function returnVerificationAttestedSuccessfully(network: string, data: any) {
+  const networkName = network || "Rootstock";
+
+  return `✅ **Verification Attestation Created Successfully!**
+
+📋 **Attestation Details:**
+• **UID**: \`${data.uid}\`
+• **Contract**: \`${data.contractAddress}\`
+• **Contract Name**: ${data.contractName}
+• **Verifier**: \`${data.verifier}\`
+• **Tool**: ${data.verificationTool}
+• **Network**: ${networkName}
+• **View**: ${data.viewUrl}
+
+🔍 This contract verification is now attested on-chain via the Rootstock Attestation Service (RAS).`;
+}
+
+export function returnTransferAttestedSuccessfully(network: string, data: any) {
+  const networkName = network || "Rootstock";
+
+  return `✅ **Transfer Attestation Created Successfully!**
+
+📋 **Attestation Details:**
+• **UID**: \`${data.uid}\`
+• **Amount**: ${data.amount} ${data.tokenSymbol}
+• **From**: \`${data.sender}\`
+• **To**: \`${data.recipient}\`
+• **Network**: ${networkName}
+• **View**: ${data.viewUrl}
+
+💸 This transfer is now attested on-chain via the Rootstock Attestation Service (RAS).`;
 }

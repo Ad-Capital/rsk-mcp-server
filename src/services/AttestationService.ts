@@ -1,4 +1,10 @@
-import { AttestationService as CLIAttestationService, RSK_ATTESTATION_CONFIG } from "@rsksmart/rsk-cli/dist/src/utils/attestation.js";
+import {
+  RSK_ATTESTATION_CONFIG,
+  DEFAULT_SCHEMA_UIDS,
+  createDeploymentAttestation,
+  createVerificationAttestation,
+  createTransferAttestation,
+} from "@rsksmart/rsk-cli/dist/src/utils/attestation.js";
 import { createAttestationSigner } from "@rsksmart/rsk-cli/dist/src/utils/walletSigner.js";
 import { WalletData } from "../tools/types.js";
 import { ethers } from "ethers";
@@ -46,6 +52,7 @@ export interface ListAttestationsParams {
   attester?: string;
   schema?: string;
   limit?: number;
+  rpcUrl?: string;
 }
 
 export interface CreateSchemaParams {
@@ -56,6 +63,73 @@ export interface CreateSchemaParams {
   walletName?: string;
   walletData?: WalletData;
   walletPassword?: string;
+}
+
+export interface AttestDeploymentParams {
+  testnet: boolean;
+  contractAddress: string;
+  contractName: string;
+  deployer: string;
+  blockNumber: number;
+  transactionHash: string;
+  timestamp: number;
+  abiHash?: string;
+  bytecodeHash?: string;
+  schemaUID?: string;
+  recipient?: string;
+  walletName?: string;
+  walletData?: WalletData;
+  walletPassword?: string;
+}
+
+export interface AttestVerificationParams {
+  testnet: boolean;
+  contractAddress: string;
+  contractName: string;
+  verifier: string;
+  sourceCodeHash: string;
+  compilationTarget: string;
+  compilerVersion: string;
+  optimizationUsed: boolean;
+  timestamp: number;
+  verificationTool: string;
+  schemaUID?: string;
+  recipient?: string;
+  walletName?: string;
+  walletData?: WalletData;
+  walletPassword?: string;
+}
+
+export interface AttestTransferParams {
+  testnet: boolean;
+  sender: string;
+  recipient: string;
+  amount: string;
+  tokenAddress?: string;
+  tokenSymbol?: string;
+  transactionHash: string;
+  blockNumber: number;
+  timestamp: number;
+  reason?: string;
+  transferType: string;
+  schemaUID?: string;
+  walletName?: string;
+  walletData?: WalletData;
+  walletPassword?: string;
+}
+
+function getEasViewerUrl(uid: string, testnet: boolean = false): string {
+  return testnet
+    ? `https://explorer.testnet.rootstock.io/ras/attestation/${uid}`
+    : `https://explorer.rootstock.io/ras/attestation/${uid}`;
+}
+
+function initializeEAS(contractAddress: string, runner: ethers.ContractRunner) {
+  const easSdk = require("@ethereum-attestation-service/eas-sdk");
+  const EAS = easSdk.EAS;
+  const eas = new EAS(contractAddress);
+  eas.connect(runner);
+  return eas;
 }
 
 export class AttestationService {
@@ -77,12 +151,8 @@ export class AttestationService {
         };
       }
 
-      const cliService = new CLIAttestationService(signer, params.testnet, true);
-
-      // @ts-ignore - accessing private method
-      await cliService.initializeEAS();
-      // @ts-ignore - accessing private property
-      const eas = cliService.eas;
+      const config = params.testnet ? RSK_ATTESTATION_CONFIG.testnet : RSK_ATTESTATION_CONFIG.mainnet;
+      const eas = initializeEAS(config.contractAddress, signer);
 
       const attestationData = {
         recipient: params.recipient as `0x${string}`,
@@ -106,7 +176,7 @@ export class AttestationService {
           uid,
           recipient: params.recipient,
           schema: params.schema,
-          viewUrl: `https://rootstock.easscan.org/attestation/view/${uid}`
+          viewUrl: getEasViewerUrl(uid, params.testnet)
         },
         responseType: "AttestationIssuedSuccessfully"
       };
@@ -122,20 +192,14 @@ export class AttestationService {
 
   async processVerifyAttestation(params: VerifyAttestationParams): Promise<AttestationServiceResult> {
     try {
-      const provider = new ethers.JsonRpcProvider(
-        params.testnet
-          ? "https://public-node.testnet.rsk.co"
-          : "https://public-node.rsk.co"
-      );
-      const tempWallet = ethers.Wallet.createRandom();
-      const signer = tempWallet.connect(provider);
+      const rpcUrl = params.testnet
+        ? "https://public-node.testnet.rsk.co"
+        : "https://public-node.rsk.co";
+      const chainId = params.testnet ? 31 : 30;
+      const provider = new ethers.JsonRpcProvider(rpcUrl, chainId, { staticNetwork: true });
 
-      const cliService = new CLIAttestationService(signer, params.testnet, true);
-
-      // @ts-ignore
-      await cliService.initializeEAS();
-      // @ts-ignore
-      const eas = cliService.eas;
+      const config = params.testnet ? RSK_ATTESTATION_CONFIG.testnet : RSK_ATTESTATION_CONFIG.mainnet;
+      const eas = initializeEAS(config.contractAddress, provider);
 
       const attestation = await eas.getAttestation(params.uid as `0x${string}`);
 
@@ -204,12 +268,8 @@ export class AttestationService {
         };
       }
 
-      const cliService = new CLIAttestationService(signer, params.testnet, true);
-
-      // @ts-ignore
-      await cliService.initializeEAS();
-      // @ts-ignore
-      const eas = cliService.eas;
+      const config = params.testnet ? RSK_ATTESTATION_CONFIG.testnet : RSK_ATTESTATION_CONFIG.mainnet;
+      const eas = initializeEAS(config.contractAddress, signer);
 
       const attestation = await eas.getAttestation(params.uid as `0x${string}`);
 
@@ -236,7 +296,7 @@ export class AttestationService {
         data: {
           uid: params.uid,
           transactionHash: txHash,
-          viewUrl: `https://rootstock.easscan.org/attestation/view/${params.uid}`
+          viewUrl: getEasViewerUrl(params.uid, params.testnet)
         },
         responseType: "AttestationRevokedSuccessfully"
       };
@@ -252,81 +312,91 @@ export class AttestationService {
 
   async processListAttestations(params: ListAttestationsParams): Promise<AttestationServiceResult> {
     try {
+      const rpcUrl = params.rpcUrl ?? (params.testnet
+        ? "https://public-node.testnet.rsk.co"
+        : "https://public-node.rsk.co");
+      const chainId = params.testnet ? 31 : 30;
+      const provider = new ethers.JsonRpcProvider(rpcUrl, chainId, { staticNetwork: true });
+
       const config = params.testnet
         ? RSK_ATTESTATION_CONFIG.testnet
         : RSK_ATTESTATION_CONFIG.mainnet;
 
-      const query = this.buildGraphQLQuery(params);
+      const EAS_ABI = [
+        "event Attested(address indexed recipient, address indexed attester, bytes32 uid, bytes32 indexed schema)"
+      ];
+      const contract = new ethers.Contract(config.contractAddress, EAS_ABI, provider);
 
-      const response = await fetch(config.graphqlEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query })
-      });
+      const limit = params.limit || 10;
+      const latestBlock = await provider.getBlockNumber();
 
-      if (!response.ok) {
-        throw new Error(`GraphQL request failed: ${response.statusText}`);
-      }
+      const fromBlock = Math.max(0, latestBlock - 5000);
 
-      const result = await response.json();
+      const filter = (contract.filters as any)["Attested"](
+        params.recipient ?? null,
+        params.attester ?? null,
+        null,
+        params.schema ?? null
+      );
 
-      if (result.errors) {
-        throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`);
-      }
+      const events = await contract.queryFilter(filter, fromBlock, latestBlock);
+
+      const recent = [...events]
+        .sort((a, b) => b.blockNumber - a.blockNumber)
+        .slice(0, limit);
+
+      const eas = initializeEAS(config.contractAddress, provider);
+
+      const attestations = await Promise.all(
+        recent.map(async (event) => {
+          const log = event as ethers.EventLog;
+          const uid = log.args[2] as string;
+
+          try {
+            const att = await eas.getAttestation(uid as `0x${string}`);
+            return {
+              uid: att.uid,
+              attester: att.attester,
+              recipient: att.recipient,
+              schema: att.schema,
+              time: Number(att.time),
+              expirationTime: Number(att.expirationTime),
+              revocationTime: Number(att.revocationTime),
+            };
+          } catch {
+            return {
+              uid,
+              attester: log.args[1] as string,
+              recipient: log.args[0] as string,
+              schema: log.args[3] as string,
+              time: 0,
+              expirationTime: 0,
+              revocationTime: 0,
+            };
+          }
+        })
+      );
 
       return {
         success: true,
-        data: result.data,
+        data: {
+          attestations,
+          count: attestations.length,
+          network: params.testnet ? "RSK Testnet" : "RSK Mainnet",
+        },
         responseType: "AttestationsListedSuccessfully"
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const isLogsUnsupported = errorMessage.includes("eth_getLogs") || errorMessage.includes("-32601");
       return {
         success: false,
-        error: `Failed to list attestations: ${errorMessage}`,
+        error: isLogsUnsupported
+          ? "The RSK public node does not support eth_getLogs. Provide a custom rpcUrl from a provider that supports event log queries (e.g., Alchemy, GetBlock, or a private RSK node)."
+          : `Failed to list attestations: ${errorMessage}`,
         responseType: "ErrorListingAttestations"
       };
     }
-  }
-
-  private buildGraphQLQuery(params: ListAttestationsParams): string {
-    const limit = params.limit || 10;
-    const filters: string[] = [];
-
-    if (params.recipient) {
-      filters.push(`recipient: { equals: "${params.recipient.toLowerCase()}" }`);
-    }
-    if (params.attester) {
-      filters.push(`attester: { equals: "${params.attester.toLowerCase()}" }`);
-    }
-    if (params.schema) {
-      filters.push(`schemaId: { equals: "${params.schema.toLowerCase()}" }`);
-    }
-
-    const whereClause = filters.length > 0 ? `where: { ${filters.join(', ')} }` : '';
-
-    return `
-      query Attestations {
-        attestations(
-          ${whereClause}
-          take: ${limit}
-          orderBy: { time: desc }
-        ) {
-          id
-          attester
-          recipient
-          refUID
-          revocable
-          revocationTime
-          expirationTime
-          data
-          schemaId
-          time
-        }
-      }
-    `;
   }
 
   async processCreateSchema(params: CreateSchemaParams): Promise<AttestationServiceResult> {
@@ -371,7 +441,9 @@ export class AttestationService {
           schemaUID,
           schema: params.schema,
           revocable: params.revocable,
-          viewUrl: `https://rootstock.easscan.org/schema/view/${schemaUID}`
+          viewUrl: params.testnet
+            ? `https://explorer.testnet.rootstock.io/ras/schema/${schemaUID}`
+            : `https://explorer.rootstock.io/ras/schema/${schemaUID}`
         },
         responseType: "SchemaCreatedSuccessfully"
       };
@@ -381,6 +453,238 @@ export class AttestationService {
         success: false,
         error: `Failed to create schema: ${errorMessage}`,
         responseType: "ErrorCreatingSchema"
+      };
+    }
+  }
+
+  async processDeploymentAttestation(params: AttestDeploymentParams): Promise<AttestationServiceResult> {
+    try {
+      const network = params.testnet ? "testnet" : "mainnet";
+      const schemaUID = params.schemaUID || DEFAULT_SCHEMA_UIDS[network].deployment;
+      if (!schemaUID) {
+        return {
+          success: false,
+          error: "No deployment schema UID available for mainnet. Provide a schemaUID or register one first using create-schema.",
+          responseType: "ErrorAttestingDeployment"
+        };
+      }
+
+      const signer = await createAttestationSigner({
+        testnet: params.testnet,
+        walletName: params.walletName,
+        isExternal: true,
+        walletsData: params.walletData,
+        password: params.walletPassword
+      });
+
+      if (!signer) {
+        return {
+          success: false,
+          error: "Failed to create wallet signer. Ensure wallet data and password are correct.",
+          responseType: "ErrorAttestingDeployment"
+        };
+      }
+
+      const deploymentData = {
+        contractAddress: params.contractAddress,
+        contractName: params.contractName,
+        deployer: params.deployer,
+        blockNumber: params.blockNumber,
+        transactionHash: params.transactionHash,
+        timestamp: params.timestamp,
+        abiHash: params.abiHash,
+        bytecodeHash: params.bytecodeHash,
+      };
+
+      const uid = await createDeploymentAttestation(signer, deploymentData, {
+        testnet: params.testnet,
+        recipient: params.recipient,
+        schemaUID,
+        enabled: true,
+        isExternal: true,
+      });
+
+      if (!uid) {
+        return {
+          success: false,
+          error: "Attestation transaction failed. Check wallet balance and network connectivity.",
+          responseType: "ErrorAttestingDeployment"
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          uid,
+          contractAddress: params.contractAddress,
+          contractName: params.contractName,
+          deployer: params.deployer,
+          viewUrl: getEasViewerUrl(uid, params.testnet)
+        },
+        responseType: "DeploymentAttestedSuccessfully"
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      return {
+        success: false,
+        error: `Failed to attest deployment: ${errorMessage}`,
+        responseType: "ErrorAttestingDeployment"
+      };
+    }
+  }
+
+  async processVerificationAttestation(params: AttestVerificationParams): Promise<AttestationServiceResult> {
+    try {
+      const network = params.testnet ? "testnet" : "mainnet";
+      const schemaUID = params.schemaUID || DEFAULT_SCHEMA_UIDS[network].verification;
+      if (!schemaUID) {
+        return {
+          success: false,
+          error: "No verification schema UID available for mainnet. Provide a schemaUID or register one first using create-schema.",
+          responseType: "ErrorAttestingVerification"
+        };
+      }
+
+      const signer = await createAttestationSigner({
+        testnet: params.testnet,
+        walletName: params.walletName,
+        isExternal: true,
+        walletsData: params.walletData,
+        password: params.walletPassword
+      });
+
+      if (!signer) {
+        return {
+          success: false,
+          error: "Failed to create wallet signer. Ensure wallet data and password are correct.",
+          responseType: "ErrorAttestingVerification"
+        };
+      }
+
+      const verificationData = {
+        contractAddress: params.contractAddress,
+        contractName: params.contractName,
+        verifier: params.verifier,
+        sourceCodeHash: params.sourceCodeHash,
+        compilationTarget: params.compilationTarget,
+        compilerVersion: params.compilerVersion,
+        optimizationUsed: params.optimizationUsed,
+        timestamp: params.timestamp,
+        verificationTool: params.verificationTool,
+      };
+
+      const uid = await createVerificationAttestation(signer, verificationData, {
+        testnet: params.testnet,
+        recipient: params.recipient,
+        schemaUID,
+        enabled: true,
+        isExternal: true,
+      });
+
+      if (!uid) {
+        return {
+          success: false,
+          error: "Attestation transaction failed. Check wallet balance and network connectivity.",
+          responseType: "ErrorAttestingVerification"
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          uid,
+          contractAddress: params.contractAddress,
+          contractName: params.contractName,
+          verifier: params.verifier,
+          verificationTool: params.verificationTool,
+          viewUrl: getEasViewerUrl(uid, params.testnet)
+        },
+        responseType: "VerificationAttestedSuccessfully"
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      return {
+        success: false,
+        error: `Failed to attest verification: ${errorMessage}`,
+        responseType: "ErrorAttestingVerification"
+      };
+    }
+  }
+
+  async processTransferAttestation(params: AttestTransferParams): Promise<AttestationServiceResult> {
+    try {
+      const network = params.testnet ? "testnet" : "mainnet";
+      const schemaUID = params.schemaUID || DEFAULT_SCHEMA_UIDS[network].transfer;
+      if (!schemaUID) {
+        return {
+          success: false,
+          error: "No transfer schema UID available for mainnet. Provide a schemaUID or register one first using create-schema.",
+          responseType: "ErrorAttestingTransfer"
+        };
+      }
+
+      const signer = await createAttestationSigner({
+        testnet: params.testnet,
+        walletName: params.walletName,
+        isExternal: true,
+        walletsData: params.walletData,
+        password: params.walletPassword
+      });
+
+      if (!signer) {
+        return {
+          success: false,
+          error: "Failed to create wallet signer. Ensure wallet data and password are correct.",
+          responseType: "ErrorAttestingTransfer"
+        };
+      }
+
+      const transferData = {
+        sender: params.sender,
+        recipient: params.recipient,
+        amount: params.amount,
+        tokenAddress: params.tokenAddress,
+        tokenSymbol: params.tokenSymbol,
+        transactionHash: params.transactionHash,
+        blockNumber: params.blockNumber,
+        timestamp: params.timestamp,
+        reason: params.reason,
+        transferType: params.transferType,
+      };
+
+      const uid = await createTransferAttestation(signer, transferData, {
+        testnet: params.testnet,
+        schemaUID,
+        enabled: true,
+        isExternal: true,
+      });
+
+      if (!uid) {
+        return {
+          success: false,
+          error: "Attestation transaction failed. Check wallet balance and network connectivity.",
+          responseType: "ErrorAttestingTransfer"
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          uid,
+          sender: params.sender,
+          recipient: params.recipient,
+          amount: params.amount,
+          tokenSymbol: params.tokenSymbol || "RBTC",
+          viewUrl: getEasViewerUrl(uid, params.testnet)
+        },
+        responseType: "TransferAttestedSuccessfully"
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      return {
+        success: false,
+        error: `Failed to attest transfer: ${errorMessage}`,
+        responseType: "ErrorAttestingTransfer"
       };
     }
   }

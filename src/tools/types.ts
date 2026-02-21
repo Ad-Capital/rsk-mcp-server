@@ -16,6 +16,7 @@ export type MCPResponse = {
     type: "text";
     text: string;
   }[];
+  isError?: boolean;
 };
 
 export enum ResponseType {
@@ -69,4 +70,10 @@ export enum ResponseType {
   ErrorListingAttestations = "errorListingAttestations",
   SchemaCreatedSuccessfully = "schemaCreatedSuccessfully",
   ErrorCreatingSchema = "errorCreatingSchema",
+  DeploymentAttestedSuccessfully = "deploymentAttestedSuccessfully",
+  ErrorAttestingDeployment = "errorAttestingDeployment",
+  VerificationAttestedSuccessfully = "verificationAttestedSuccessfully",
+  ErrorAttestingVerification = "errorAttestingVerification",
+  TransferAttestedSuccessfully = "transferAttestedSuccessfully",
+  ErrorAttestingTransfer = "errorAttestingTransfer",
 }
